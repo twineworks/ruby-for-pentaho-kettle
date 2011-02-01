@@ -80,6 +80,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	
 	int margin = Const.MARGIN;
 
+	private CTabFolder wLeftFolder;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -440,49 +442,29 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	
 	private void addLeftBar(){
 		
-		ExpandBar expandBar = new ExpandBar(wTopLeft, SWT.V_SCROLL);
-		props.setLook(expandBar);
+		wLeftFolder = new CTabFolder(wTopLeft, SWT.BORDER | SWT.RESIZE);
+		wLeftFolder.setSimple(false);
+		wLeftFolder.setUnselectedImageVisible(true);
+		wLeftFolder.setUnselectedCloseVisible(true);
+		wLeftFolder.setMaximizeVisible(true);
+		wLeftFolder.setMinimizeVisible(true);
+		props.setLook(wLeftFolder);
 
-		FormData fdExpBar = new FormData();
-		fdExpBar.left = new FormAttachment(0, 0);
-		fdExpBar.top  = new FormAttachment(wlScriptFunctions, margin);
-		fdExpBar.right = new FormAttachment(100, 0);
-		fdExpBar.bottom = new FormAttachment(100, 0);
-		expandBar.setLayoutData(fdExpBar);
+		CTabItem item = new CTabItem(wLeftFolder, SWT.NONE);		
+		item.setText("Settings");
 		
-		ExpandItem xpndtmSettings = new ExpandItem(expandBar, SWT.NONE);
-		xpndtmSettings.setImage(guiResource.getImage("ui/images/true.png"));
-		xpndtmSettings.setExpanded(true);
-		xpndtmSettings.setText(BaseMessages.getString(PKG, "RubyStepDialog.Settings.Label")); //$NON-NLS-1$ //$NON-NLS-2$
+		Label wSettingsLabel = new Label(wLeftFolder, SWT.CENTER); 
+		wSettingsLabel.setText("Settings");
 		
-		Composite compSettings = new Composite(expandBar, SWT.NONE);
-		xpndtmSettings.setControl(compSettings);
-		compSettings.setLayout(new FormLayout());
+		item.setControl(wSettingsLabel);
+
+		FormData fdLeftFolderBar = new FormData();
+		fdLeftFolderBar.left = new FormAttachment(0, 0);
+		fdLeftFolderBar.top  = new FormAttachment(wlScriptFunctions, margin);
+		fdLeftFolderBar.right = new FormAttachment(100, 0);
+		fdLeftFolderBar.bottom = new FormAttachment(100, 0);
+		wLeftFolder.setLayoutData(fdLeftFolderBar);
 		
-		Label wlExecutionModel = new Label(compSettings, SWT.NONE);
-		FormData fd_wlExecutionModel = new FormData();
-		fd_wlExecutionModel.top = new FormAttachment(0);
-		fd_wlExecutionModel.left = new FormAttachment(0);
-		wlExecutionModel.setLayoutData(fd_wlExecutionModel);
-		wlExecutionModel.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label")); //$NON-NLS-1$ //$NON-NLS-2$
-		xpndtmSettings.setHeight(xpndtmSettings.getControl().computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-		
-		ExpandItem xpndtmSamples = new ExpandItem(expandBar, SWT.NONE);
-		xpndtmSamples.setImage(guiResource.getImage("ui/images/zoom.png"));
-		xpndtmSamples.setExpanded(true);
-		xpndtmSamples.setText(BaseMessages.getString(PKG, "RubyStepDialog.Samples.Label")); //$NON-NLS-1$ //$NON-NLS-2$
-		
-		Composite compSamples = new Composite(expandBar, SWT.NONE);
-		xpndtmSamples.setControl(compSamples);
-		compSamples.setLayout(new FormLayout());
-		
-		Label wlSample1 = new Label(compSamples, SWT.NONE);
-		FormData fd_wlSample1 = new FormData();
-		fd_wlSample1.top = new FormAttachment(0);
-		fd_wlSample1.left = new FormAttachment(0);
-		wlSample1.setLayoutData(fd_wlSample1);
-		wlSample1.setText(BaseMessages.getString(PKG, "RubyStepDialog.Sample1.Label")); //$NON-NLS-1$ //$NON-NLS-2$
-		xpndtmSamples.setHeight(xpndtmSamples.getControl().computeSize(SWT.DEFAULT, SWT.DEFAULT).y);	
 		
 	}
 	
