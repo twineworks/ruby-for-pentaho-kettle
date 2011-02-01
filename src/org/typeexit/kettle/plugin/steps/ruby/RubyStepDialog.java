@@ -5,6 +5,8 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabFolder2Listener;
+import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.FocusAdapter;
@@ -82,6 +84,12 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private CTabFolder wLeftFolder;
 
+	private SashForm wTop;
+
+	private ToolItem itemSettings;
+
+	private ToolBar wBar;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -141,7 +149,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		 ------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 		// top part 
-		SashForm wTop = new SashForm(wSash, SWT.HORIZONTAL);
+		wTop = new SashForm(wSash, SWT.HORIZONTAL);
  		props.setLook(wTop);
 
 		FormLayout topLayout  = new FormLayout();
@@ -203,10 +211,25 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wFolder.setUnselectedImageVisible(true);
 		wFolder.setUnselectedCloseVisible(true);
 		
-		ToolBar wBar = new ToolBar(wTopRight, SWT.FLAT|SWT.RIGHT);
+		wBar = new ToolBar(wTopRight, SWT.FLAT|SWT.RIGHT);
 
+		itemSettings = new ToolItem(wBar, SWT.NONE);
+		itemSettings.setImage(guiResource.getImage("ui/images/eScript.png"));
+		itemSettings.setText("Advanced Settings");
+		itemSettings.setEnabled(false);
+		
+		itemSettings.addSelectionListener(new SelectionAdapter(){
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				wTop.SASH_WIDTH = margin;
+				wTop.setWeights(new int[]{32,68});
+				//itemSettings.setText(" ");
+				itemSettings.setEnabled(false);
+			}
+		});			
+		
 		ToolItem item = new ToolItem(wBar, SWT.NONE);
-		item.setImage(guiResource .getImage("ui/images/check.png"));
+		item.setImage(guiResource.getImage("ui/images/check.png"));
 		item.setText(BaseMessages.getString(PKG, "RubyStepDialog.CheckSyntax.Label"));
 		
 		item.addSelectionListener(new SelectionAdapter(){
@@ -215,7 +238,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				showParseErrors();
 			}
 		});
-		
+
 		wBar.pack();
 		
 		wlEditingPosition = new Label(wTopRight, SWT.RIGHT);
@@ -446,18 +469,54 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wLeftFolder.setSimple(false);
 		wLeftFolder.setUnselectedImageVisible(true);
 		wLeftFolder.setUnselectedCloseVisible(true);
-		wLeftFolder.setMaximizeVisible(true);
+		wLeftFolder.setMaximizeVisible(false);
 		wLeftFolder.setMinimizeVisible(true);
 		props.setLook(wLeftFolder);
 
-		CTabItem item = new CTabItem(wLeftFolder, SWT.NONE);		
-		item.setText("Settings");
+		// add item
+		CTabItem settingsItem = new CTabItem(wLeftFolder, SWT.NONE);		
+		settingsItem.setText("Settings");
 		
 		Label wSettingsLabel = new Label(wLeftFolder, SWT.CENTER); 
 		wSettingsLabel.setText("Settings");
 		
-		item.setControl(wSettingsLabel);
-
+		settingsItem.setControl(wSettingsLabel);
+		
+		CTabItem sampleItem = new CTabItem(wLeftFolder, SWT.NONE);		
+		sampleItem.setText("Samples");
+		
+		Label wSamplesLabel = new Label(wLeftFolder, SWT.CENTER); 
+		wSamplesLabel.setText("Samples");
+		
+		sampleItem.setControl(wSamplesLabel);
+		
+		wLeftFolder.setSelection(settingsItem);
+		wLeftFolder.addCTabFolder2Listener(new CTabFolder2Listener() {
+			
+			@Override
+			public void showList(CTabFolderEvent e) {
+			}
+			
+			@Override
+			public void restore(CTabFolderEvent e) {
+			}
+			
+			@Override
+			public void minimize(CTabFolderEvent e) {
+				itemSettings.setEnabled(true);
+				wTop.SASH_WIDTH = 0;
+				wTop.setWeights(new int[]{0,100});
+			}
+			
+			@Override
+			public void maximize(CTabFolderEvent e) {
+			}
+			
+			@Override
+			public void close(CTabFolderEvent e) {
+			}
+		});
+		
 		FormData fdLeftFolderBar = new FormData();
 		fdLeftFolderBar.left = new FormAttachment(0, 0);
 		fdLeftFolderBar.top  = new FormAttachment(wlScriptFunctions, margin);
