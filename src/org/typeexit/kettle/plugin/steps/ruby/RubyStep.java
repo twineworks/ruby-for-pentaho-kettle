@@ -1,18 +1,6 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jruby.RubyHash;
-import org.jruby.RubySymbol;
-import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.embed.LocalContextScope;
-import org.jruby.embed.ScriptingContainer;
-import org.jruby.javasupport.JavaUtil;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.row.RowDataUtil;
-import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;

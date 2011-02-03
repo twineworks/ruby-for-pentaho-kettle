@@ -2,30 +2,27 @@ package org.typeexit.kettle.plugin.steps.ruby.execmodels;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.jruby.RubyArray;
-import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyTime;
-import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.JavaUtilities;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.ValueMeta;
-import org.typeexit.kettle.plugin.steps.ruby.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepFactory;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMarshalledObject;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 
 public class SimpleExecutionModel implements ExecutionModel{
 
@@ -56,6 +53,13 @@ public class SimpleExecutionModel implements ExecutionModel{
 
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
+			
+			// put all variables into scope
+			for(RubyVariableMeta var : meta.getRubyVariables()){
+				data.container.put(var.getName(), step.environmentSubstitute(var.getValue()));
+			}
+			
+			// FIXME: fix this when we know how to support multiple script tabs
 			data.rubyScriptObject = data.container.parse(meta.getScripts().get(0).getScript(), 0);
 			
 		}

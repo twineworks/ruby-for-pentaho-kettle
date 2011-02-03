@@ -21,7 +21,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -42,13 +41,16 @@ import org.pentaho.di.core.Props;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.pentaho.di.trans.step.BaseStepMeta;
-import org.pentaho.di.trans.step.StepDialogInterface;
+import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 
 public class RubyStepDialog extends BaseStepDialog implements StepDialogInterface {
 
@@ -613,6 +615,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		// load clear input fields flag
 		wClearInputFields.setSelection(input.isClearInputFields());
+		
+		// load ruby vars
+		int varNum = 0;
+		for(RubyVariableMeta var : input.getRubyVariables()){
+			TableItem row = wScopeVariables.table.getItem(varNum++);
+			row.setText(1, var.getName());
+			row.setText(2, var.getValue());
+		}
+		wScopeVariables.optWidth(true);
+		wScopeVariables.setRowNums();
 
 	}
 
@@ -651,6 +663,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		// save clear input fields flag
 		input.setClearInputFields(wClearInputFields.getSelection());
+		
+		// generate ruby vars
+		List<RubyVariableMeta> rubyVars = input.getRubyVariables();
+		rubyVars.clear();
+		
+		int varCount = wScopeVariables.nrNonEmpty();
+		for(int i=0;i<varCount;i++){
+			TableItem t = wScopeVariables.getNonEmpty(i);
+			rubyVars.add(new RubyVariableMeta(t.getText(1), t.getText(2)));
+		}
 
 		dispose();
 	}

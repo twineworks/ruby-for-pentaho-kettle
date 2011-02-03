@@ -15,6 +15,10 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.*;
 import org.pentaho.di.trans.*;
 import org.pentaho.di.trans.step.*;
+import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.w3c.dom.Node;
 
 public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
@@ -186,12 +190,23 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		retval.append(TAB).append("<outputFields>").append(Const.CR);
 		for(OutputFieldMeta out : outputFields){
 			retval.append(TAB).append(TAB).append("<outputField>").append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("name", out.getName())).append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("type", out.getType())).append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("update", out.isUpdate())).append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("name", out.getName()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("type", out.getType()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("update", out.isUpdate()));
 			retval.append(TAB).append(TAB).append("</outputField>").append(Const.CR);
 		}
 		retval.append(TAB).append("</outputFields>").append(Const.CR);
+		
+		// save ruby variables
+		retval.append(TAB).append("<rubyVariables>").append(Const.CR);
+		for(RubyVariableMeta rvar : rubyVariables){
+			retval.append(TAB).append(TAB).append("<rubyVariable>").append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("name", rvar.getName()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("value", rvar.getValue()));
+			retval.append(TAB).append(TAB).append("</rubyVariable>").append(Const.CR);
+		}
+		retval.append(TAB).append("</rubyVariables>").append(Const.CR);
+		
 		
 		return retval.toString();
 	}
@@ -227,7 +242,20 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				boolean update = "Y".equalsIgnoreCase(XMLHandler.getTagValue(sNode, "update"));
 				outputFields.add(new OutputFieldMeta(name, type, update));
 			}
+			
+			// load ruby variables
+			rubyVariables.clear();
 
+			Node rubyVariablesNode = XMLHandler.getSubNode(stepnode, "rubyVariables");
+			int nrVars = XMLHandler.countNodes(rubyVariablesNode, "rubyVariable");
+			
+			for(int i=0;i<nrVars;i++){
+				Node sNode = XMLHandler.getSubNodeByNr(rubyVariablesNode, "rubyVariable", i);
+				String name = XMLHandler.getTagValue(sNode, "name");
+				String value = XMLHandler.getTagValue(sNode, "value");
+				rubyVariables.add(new RubyVariableMeta(name, value));
+			}
+			
 
 		} catch (Exception e) {
 			throw new KettleXMLException("Template Plugin Unable to read step info from XML node", e);
@@ -239,6 +267,35 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	 * Serialization to Database	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+	public void saveRep(Repository rep, ObjectId id_transformation, ObjectId id_step) throws KettleException {
+		try {
+			// save steps
+			for (int i = 0; i < scripts.size(); i++) {
+				rep.saveStepAttribute(id_transformation, id_step, i, "script_title", scripts.get(i).getTitle());
+				rep.saveStepAttribute(id_transformation, id_step, i, "script_body", scripts.get(i).getScript());
+			}
+			
+			// save clear input fields flag
+			rep.saveStepAttribute(id_transformation, id_step, "clear_input_fields", clearInputFields);
+			
+			// save ouput fields
+			for(int i=0;i<outputFields.size();i++){
+				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_name", outputFields.get(i).getName());
+				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_type", outputFields.get(i).getType());
+				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_update", outputFields.get(i).isUpdate());
+			}
+			
+			// save ruby variables
+			for(int i=0;i<rubyVariables.size();i++){
+				rep.saveStepAttribute(id_transformation, id_step, i, "ruby_variable_name", rubyVariables.get(i).getName());
+				rep.saveStepAttribute(id_transformation, id_step, i, "ruby_variable_value", rubyVariables.get(i).getValue());
+			}
+			
+		} catch (Exception e) {
+			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnableToSaveStepInfoToRepository") + id_step, e);
+		}
+	}	
+	
 	public void readRep(Repository rep, ObjectId id_step, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleException {
 		try {
 
@@ -270,35 +327,25 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				outputFields.add(outField);
 			}
 			
+			// load ruby variables
+			int nrVars = rep.countNrStepAttributes(id_step, "ruby_variable_name");
+			rubyVariables.clear();
 			
+			for(int i=0;i<nrVars;i++){
+				RubyVariableMeta var = new RubyVariableMeta(
+					rep.getStepAttributeString(id_step, i, "ruby_variable_name"),
+					rep.getStepAttributeString(id_step, i, "ruby_variable_value")
+				);
+				rubyVariables.add(var);
+			}
+
 			
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnexpectedErrorInReadingStepInfo"), e);
 		}
 	}
 
-	public void saveRep(Repository rep, ObjectId id_transformation, ObjectId id_step) throws KettleException {
-		try {
-			// save steps
-			for (int i = 0; i < scripts.size(); i++) {
-				rep.saveStepAttribute(id_transformation, id_step, i, "script_title", scripts.get(i).getTitle());
-				rep.saveStepAttribute(id_transformation, id_step, i, "script_body", scripts.get(i).getScript());
-			}
-			
-			// save clear input fields flag
-			rep.saveStepAttribute(id_transformation, id_step, "clear_input_fields", clearInputFields);
-			
-			// save ouput fields
-			for(int i=0;i<outputFields.size();i++){
-				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_name", outputFields.get(i).getName());
-				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_type", outputFields.get(i).getType());
-				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_update", outputFields.get(i).isUpdate());
-			}
-			
-		} catch (Exception e) {
-			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnableToSaveStepInfoToRepository") + id_step, e);
-		}
-	}
+
 
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Interface access 	
