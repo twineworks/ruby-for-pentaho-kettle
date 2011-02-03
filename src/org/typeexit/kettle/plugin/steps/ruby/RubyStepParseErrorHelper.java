@@ -27,7 +27,7 @@ public class RubyStepParseErrorHelper {
 		
 		Display display = Display.getDefault();
 		errorLineColor = new Color(display, new RGB(255,220,220));
-		container = RubyStepFactory.createScriptingContainer();
+		container = RubyStepFactory.createScriptingContainer(false);
 	}
 	
 	void showParseErrors(StyledTextComp wText, Label wlSyntaxCheck) {

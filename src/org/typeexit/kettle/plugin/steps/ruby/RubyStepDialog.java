@@ -22,6 +22,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -32,6 +33,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
@@ -64,7 +66,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private TableView wFields;
 
-	private Button wClearResultFields;
+	private Button wClearInputFields;
 
 	private Label wlEditingPosition;
 	private Composite wTopLeft;
@@ -97,9 +99,17 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private String[] nextStepNames;
 
+	private Image scriptImage;
+
+	private Image checkImage;
+	
+	final private String[] NO_YES = new String[2];
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
+		NO_YES[0] = BaseMessages.getString(PKG, "System.Combo.No");
+		NO_YES[1] = BaseMessages.getString(PKG, "System.Combo.Yes");
 	}
 
 	public String open() {
@@ -128,6 +138,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		shell.setText(BaseMessages.getString(PKG, "RubyStep.Shell.Title"));
 
 		int middle = props.getMiddlePct();
+		
+		scriptImage = guiResource.getImage("ui/images/eScript.png");
+		checkImage = guiResource.getImage("ui/images/check.png");
 
 		// Stepname line
 		wlStepname = new Label(shell, SWT.RIGHT);
@@ -175,7 +188,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wTop.setLayoutData(fdTop);
 
 		wTop.SASH_WIDTH = margin;
-		wTop.setWeights(new int[] { 40, 60 });
+		wTop.setWeights(new int[] { 32, 68 });
 
 		/*------------------------------------------------------------------------------------------------------------------------------------------------
 		 * Bottom part of form 
@@ -210,6 +223,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		addOutputFieldsTab();
 		addScopeVariablesTab();
+		addExecutionModelTab();
 		
 		// set selected item in tab
 		wBottomFolder.setSelection(0);
@@ -322,7 +336,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		outFieldsItem.setControl(wPanel);
 
-		final int nrRows = 0; // TODO: fixme this is dynamic
+		final int nrRows = input.getRubyVariables().size(); 
 		ColumnInfo[] colinf = new ColumnInfo[] {
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.ScopeVariable"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.ScopeVariableValue"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
@@ -357,20 +371,20 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		outFieldsItem.setControl(wPanel);
 
-		wClearResultFields = new Button(wPanel, SWT.CHECK);
-		wClearResultFields.setText(BaseMessages.getString(PKG, "RubyStepDialog.ClearFields.Label")); //$NON-NLS-1$
-		props.setLook(wClearResultFields);
+		wClearInputFields = new Button(wPanel, SWT.CHECK);
+		wClearInputFields.setText(BaseMessages.getString(PKG, "RubyStepDialog.ClearFields.Label")); //$NON-NLS-1$
+		props.setLook(wClearInputFields);
 		FormData fdClearResultFields = new FormData();
 		fdClearResultFields.right = new FormAttachment(100, 0);
 		fdClearResultFields.bottom = new FormAttachment(100, 0);
-		wClearResultFields.setLayoutData(fdClearResultFields);
+		wClearInputFields.setLayoutData(fdClearResultFields);
 
-		final int fieldsRows = 0; // TODO: fixme this is dynamic
+		final int fieldsRows = input.getOutputFields().size();
 
 		ColumnInfo[] colinf = new ColumnInfo[] {
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.Fieldname"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.Type"), ColumnInfo.COLUMN_TYPE_CCOMBO, ValueMeta.getTypes()), //$NON-NLS-1$
-				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.UpdateExisting"), ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { BaseMessages.getString(PKG, "System.Combo.No"), BaseMessages.getString(PKG, "System.Combo.Yes") }) //$NON-NLS-1$
+				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.UpdateExisting"), ColumnInfo.COLUMN_TYPE_CCOMBO, NO_YES) //$NON-NLS-1$
 		};
 
 		wFields = new TableView(transMeta, wPanel, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, fieldsRows, lsMod, props);
@@ -379,7 +393,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		fdFields.left = new FormAttachment(0, 0);
 		fdFields.top = new FormAttachment(0, 0);
 		fdFields.right = new FormAttachment(100, 0);
-		fdFields.bottom = new FormAttachment(wClearResultFields, -margin);
+		fdFields.bottom = new FormAttachment(wClearInputFields, -margin);
 		wFields.setLayoutData(fdFields);
 
 	}
@@ -401,14 +415,14 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		infoStepsItem.setControl(wPanel);
 
-		final int fieldsRows = 0; // TODO: fixme this is dynamic
+		final int nrRows = input.getInfoSteps().size();
 
 		ColumnInfo[] colinf = new ColumnInfo[] {
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.InfoStepTag"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.InfoStepName"), ColumnInfo.COLUMN_TYPE_CCOMBO, prevStepNames), //$NON-NLS-1$
 		};
 
-		wInfoSteps = new TableView(transMeta, wPanel, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, fieldsRows, lsMod, props);
+		wInfoSteps = new TableView(transMeta, wPanel, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, nrRows, lsMod, props);
 
 		FormData fdFields = new FormData();
 		fdFields.left = new FormAttachment(0, 0);
@@ -436,14 +450,14 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		targetStepsItem.setControl(wPanel);
 
-		final int fieldsRows = 0; // TODO: fixme this is dynamic
+		final int nrRows = input.getTargetSteps().size(); 
 
 		ColumnInfo[] colinf = new ColumnInfo[] {
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.TargetStepTag"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
 				new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.TargetStepName"), ColumnInfo.COLUMN_TYPE_CCOMBO, nextStepNames), //$NON-NLS-1$
 		};
 
-		wTargetSteps = new TableView(transMeta, wPanel, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, fieldsRows, lsMod, props);
+		wTargetSteps = new TableView(transMeta, wPanel, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colinf, nrRows, lsMod, props);
 
 		FormData fdFields = new FormData();
 		fdFields.left = new FormAttachment(0, 0);
@@ -475,10 +489,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	
 	private void addExecutionModelTab() {
 
-		CTabItem executionModelItem = new CTabItem(wLeftFolder, SWT.NONE);
+		CTabItem executionModelItem = new CTabItem(wBottomFolder, SWT.NONE);
 		executionModelItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label"));
 
-		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
+		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
 
 		FormData fdPanel = new FormData();
@@ -514,7 +528,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptToolBar = new ToolBar(wTopRight, SWT.FLAT | SWT.RIGHT);
 
 		itemSettings = new ToolItem(wScriptToolBar, SWT.NONE);
-		itemSettings.setImage(guiResource.getImage("ui/images/eScript.png"));
+		itemSettings.setImage(scriptImage);
 		itemSettings.setText(BaseMessages.getString(PKG, "RubyStepDialog.AdvancedSettings.Label")); //$NON-NLS-1$
 		itemSettings.setEnabled(false);
 
@@ -529,7 +543,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		});
 
 		ToolItem item = new ToolItem(wScriptToolBar, SWT.NONE);
-		item.setImage(guiResource.getImage("ui/images/check.png"));
+		item.setImage(checkImage);
 		item.setText(BaseMessages.getString(PKG, "RubyStepDialog.CheckSyntax.Label")); //$NON-NLS-1$
 
 		item.addSelectionListener(new SelectionAdapter() {
@@ -582,10 +596,23 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wStepname.selectAll();
 
 		// load the different scripts
-		List<RubyScriptMeta> scripts = input.getScripts();
-		for (RubyScriptMeta rubyScriptMeta : scripts) {
+		for (RubyScriptMeta rubyScriptMeta : input.getScripts()) {
 			addScriptTab(rubyScriptMeta);
 		}
+		
+		// load output fields
+		int rowNum = 0;
+		for (OutputFieldMeta outField : input.getOutputFields()) {
+			TableItem row = wFields.table.getItem(rowNum++);
+			row.setText(1, outField.getName());
+			row.setText(2, ValueMeta.getTypeDesc(outField.getType()));
+			row.setText(3, outField.isUpdate()?NO_YES[1]:NO_YES[0]);
+		}
+		wFields.optWidth(true);
+		wFields.setRowNums();
+		
+		// load clear input fields flag
+		wClearInputFields.setSelection(input.isClearInputFields());
 
 	}
 
@@ -611,6 +638,19 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			scripts.add(new RubyScriptMeta(item.getText(), wText.getText()));
 
 		}
+		
+		// generate output fields
+		List<OutputFieldMeta> outFields = input.getOutputFields();
+		outFields.clear();
+		
+		int fieldCount = wFields.nrNonEmpty();
+		for (int i=0;i<fieldCount;i++){
+			TableItem t = wFields.getNonEmpty(i);
+			outFields.add(new OutputFieldMeta(t.getText(1), ValueMeta.getType(t.getText(2)), NO_YES[1].equalsIgnoreCase(t.getText(3))));
+		}
+		
+		// save clear input fields flag
+		input.setClearInputFields(wClearInputFields.getSelection());
 
 		dispose();
 	}
@@ -649,7 +689,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		});
 
-		addExecutionModelTab();
 		addFieldSummaryTab();
 		
 		prevStepNames = transMeta.getPrevStepNames(stepMeta);		
@@ -669,7 +708,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		
 		// set selected item in tab
 		wLeftFolder.setSelection(0);
-		
 
 	}
 

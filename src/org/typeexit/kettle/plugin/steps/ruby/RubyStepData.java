@@ -10,7 +10,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 public class RubyStepData extends BaseStepData implements StepDataInterface {
 
 	public RowMetaInterface outputRowMeta;
-	public Object rubyReceiverObject;
+	public EmbedEvalUnit rubyScriptObject;
 	public ScriptingContainer container;
 	public RowMetaInterface inputRowMeta;
 	public String[] inputFieldNames;

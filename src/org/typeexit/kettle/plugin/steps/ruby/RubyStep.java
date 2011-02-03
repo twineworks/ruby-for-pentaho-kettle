@@ -11,16 +11,20 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
+import org.typeexit.kettle.plugin.steps.ruby.execmodels.ExecutionModel;
+import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
 
 public class RubyStep extends BaseStep implements StepInterface {
 
 	private RubyStepData data;
 	private RubyStepMeta meta;
+	private ExecutionModel model;
 	
 	public RubyStep(StepMeta s, StepDataInterface stepDataInterface, int c, TransMeta t, Trans dis) {
 		super(s, stepDataInterface, c, t, dis);
@@ -31,69 +35,33 @@ public class RubyStep extends BaseStep implements StepInterface {
 		meta = (RubyStepMeta) smi;
 		data = (RubyStepData) sdi;
 
-		Object[] r = getRow(); // get row, blocks when needed!
-		if (r == null) // no more input to be expected...
-		{
-			setOutputDone();
-			return false;
-		}
+		return model.onProcessRow();
 
-		if (first) {
-			first = false;
-			data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
-			data.inputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
-			data.inputFieldNames = data.inputRowMeta.getFieldNames();
-			data.runtime = data.container.getProvider().getRuntime();
-			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-		}
-		
-		for(int i= 0; i< data.inputFieldNames.length;i++){
-			data.container.put("$"+data.inputFieldNames[i], r[i]);
-		}
-		
-		data.container.callMethod(data.rubyReceiverObject, "process_row");
-
-		for(int i= 0; i< data.inputFieldNames.length;i++){
-			r[i] = data.container.get("$"+data.inputFieldNames[i]);
-		}
-		
-		// write all the values back, assuming they have not changed type
-		
-		putRow(data.outputRowMeta, r); // copy row to possible alternate rowset(s)
-
-		return true;
 	}
 
 	public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
 		meta = (RubyStepMeta) smi;
 		data = (RubyStepData) sdi;
 
-		boolean retval = super.init(smi, sdi);
+		boolean initSuccess = super.init(smi, sdi);
 		
-		if (retval){
-			
-			data.container = RubyStepFactory.createScriptingContainer();
-			String script = meta.getScripts().get(0).getScript();
-			
-			data.container.parse(script, 1);
-			data.rubyReceiverObject = data.container.runScriptlet(script);
-			
-			//data.container.put(data.rubyReceiverObject, "@step", this);
-			
-			Object result = data.container.callMethod(data.rubyReceiverObject, "init_step", Boolean.class);
-			retval = Boolean.valueOf((Boolean)result);
+		if (initSuccess){
+			model = new SimpleExecutionModel();
+			model.setEnvironment(this, data, meta);
+			initSuccess = model.onInit();
 		}
-		
-		return retval;
+		return initSuccess;
 	}
 
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 		meta = (RubyStepMeta) smi;
 		data = (RubyStepData) sdi;
 		
-		data.container = null;
-		data.rubyReceiverObject = null;
-
+		if (model != null){
+			model.onDispose();
+			model = null;
+		}
+		
 		super.dispose(smi, sdi);
 	}
 
