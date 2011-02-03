@@ -10,6 +10,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyTime;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -49,11 +50,14 @@ public class SimpleExecutionModel implements ExecutionModel{
 			data.container = RubyStepFactory.createScriptingContainer(true);
 			data.runtime = data.container.getProvider().getRuntime();
 			
+			// FIXME: fixme when we know how to support multiple script tabs
+			data.container.setScriptFilename(meta.getScripts().get(0).getTitle());
+			data.container.getProvider().getRubyInstanceConfig().setCompileMode(CompileMode.JIT);
+
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
-			
-			// FIXME: fixme when we know how to support multiple script tabs
 			data.rubyScriptObject = data.container.parse(meta.getScripts().get(0).getScript(), 0);
+			
 		}
 		catch(Exception e){
 			step.logError("Error Initializing Ruby Scripting Step", e);
@@ -106,6 +110,72 @@ public class SimpleExecutionModel implements ExecutionModel{
 		
 	}
 	
+	private void processOutputHash(Object[] r, RubyHash resultRow) throws KettleException{
+		
+		// set each field's value from the resultRow
+		for (OutputFieldMeta outField : meta.getOutputFields()) {
+			
+			IRubyObject rubyVal = resultRow.fastARef(JavaEmbedUtils.javaToRuby(data.runtime, outField.getName()));
+			
+			// convert simple cases automatically
+			Object javaValue = null;
+			
+			switch(outField.getType()){
+				case ValueMeta.TYPE_BOOLEAN:
+				case ValueMeta.TYPE_INTEGER:
+				case ValueMeta.TYPE_STRING:
+				case ValueMeta.TYPE_NUMBER:
+				case ValueMeta.TYPE_NONE:
+					// TODO: provide a meaningful error message if this fails because the user put something strange in here
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass()); 
+				break;
+				case ValueMeta.TYPE_SERIALIZABLE:
+					String marshalled = data.container.parse("Marshal").run().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
+					javaValue = new RubyStepMarshalledObject(marshalled); 
+				break;
+				case ValueMeta.TYPE_BINARY:
+					RubyArray arr = rubyVal.convertToArray(); // TODO: provide meaningful error message if this fails
+					byte[] bytes = new byte[arr.size()];
+					for(int i=0;i<bytes.length;i++){
+						Object rItem = arr.get(i);
+						if (rItem instanceof Number){
+							bytes[i] = ((Number)rItem).byteValue();
+						}
+						else{
+							throw new KettleException("Found a non-number in Binary field "+outField.getName()+": "+rItem.toString());
+						}
+					}
+					javaValue = bytes;
+				break;
+				case ValueMeta.TYPE_BIGNUMBER:
+					if (rubyVal instanceof RubyFloat){
+						javaValue = new BigDecimal(((Double)rubyVal.toJava(Double.class)).doubleValue());
+					}
+					else{
+						javaValue = new BigDecimal(rubyVal.toString());
+					}
+					
+				break;
+				case ValueMeta.TYPE_DATE:
+					if (rubyVal instanceof RubyFixnum){
+						javaValue = new Date(((RubyFixnum)rubyVal).getLongValue());
+					}
+					else if (rubyVal instanceof RubyTime){
+						javaValue = ((RubyTime)rubyVal).getJavaDate();
+					}
+				break;
+					
+					
+			}
+			// TODO: optimize this for each field to know its index in advance
+			r[data.outputRowMeta.indexOfValue(outField.getName())] = javaValue;
+			
+		}
+
+		step.putRow(data.outputRowMeta, r);		
+		
+	}
+	
 	@Override
 	public boolean onProcessRow() throws KettleException {
 
@@ -120,8 +190,11 @@ public class SimpleExecutionModel implements ExecutionModel{
 		// get the next row 
 		if (r != null){
 
+			// make sure the row can hold the results
+			r = RowDataUtil.resizeArray(r, data.outputRowMeta.size());
+			
 			// create a hash from the row
-			RubyHash rubyRow = new RubyHash(data.runtime);
+			RubyHash rubyRow = new RubyHash(data.runtime); 
 
 			// TODO: optimize this in letting the user decide which fields to insert (it makes a difference for serializable and binary types), user should maybe also choose which object to pass (Adapted Java Object or native ruby type)
 			// TODO: May be further optimized by deferring the conversion selection for each field, maybe not 
@@ -172,74 +245,53 @@ public class SimpleExecutionModel implements ExecutionModel{
 			// run the script, the result should give a ruby hash
 			IRubyObject result = data.rubyScriptObject.run();
 
-			// get the result row it from global scope
-			RubyHash resultRow = result.convertToHash(); // TODO: provide a meaningful error message if this fails or yields null
-			
-			// make sure the row can hold the results
-			r = RowDataUtil.resizeArray(r, data.outputRowMeta.size());
-			
-			// set each field
-			List<OutputFieldMeta> outputFields = meta.getOutputFields();
-			for (OutputFieldMeta outField : outputFields) {
-				
-				IRubyObject rubyVal = resultRow.fastARef(JavaEmbedUtils.javaToRuby(data.runtime, outField.getName()));
-				
-				// convert simple cases automatically
-				Object javaValue = null;
-				
-				switch(outField.getType()){
-					case ValueMeta.TYPE_BOOLEAN:
-					case ValueMeta.TYPE_INTEGER:
-					case ValueMeta.TYPE_STRING:
-					case ValueMeta.TYPE_NUMBER:
-					case ValueMeta.TYPE_NONE:
-						// TODO: provide a meaningful error message if this fails because the user put something strange in here
-						javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass()); 
-					break;
-					case ValueMeta.TYPE_SERIALIZABLE:
-						String marshalled = data.container.parse("Marshal").run().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
-						javaValue = new RubyStepMarshalledObject(marshalled); 
-					break;
-					case ValueMeta.TYPE_BINARY:
-						RubyArray arr = rubyVal.convertToArray(); // TODO: provide meaningful error message if this fails
-						byte[] bytes = new byte[arr.size()];
-						for(int i=0;i<bytes.length;i++){
-							Object rItem = arr.get(i);
-							if (rItem instanceof Number){
-								bytes[i] = ((Number)rItem).byteValue();
-							}
-							else{
-								throw new KettleException("Found a non-number in Binary field "+outField.getName()+": "+rItem.toString());
-							}
+			// skip nil result rows
+			if (result.isNil()){
+				// skip row
+			}
+			// ruby hashes are processed instantly
+			else if (result instanceof RubyHash){
+				processOutputHash(r, (RubyHash) result);	
+			}
+			// arrays may contain:
+			// nil values -> skipped row
+			// hashes or anything convertible to hash -> write row
+			else if (result instanceof RubyArray){
+				RubyArray resultArray = (RubyArray) result;
+				int length = resultArray.getLength();
+				for(int i=0;i<length;i++){
+					IRubyObject o = resultArray.entry(i);
+					if (o instanceof RubyHash){
+						processOutputHash(r, (RubyHash) o);
+					}
+					else if (o.isNil()){
+						// skip row
+					}
+					else{
+						try{
+							RubyHash resultRow = o.convertToHash(); // TODO: test this and provide a meaningful error message if this fails or yields null
+							processOutputHash(r, resultRow);
 						}
-						javaValue = bytes;
-					break;
-					case ValueMeta.TYPE_BIGNUMBER:
-						if (rubyVal instanceof RubyFloat){
-							javaValue = new BigDecimal(((Double)rubyVal.toJava(Double.class)).doubleValue());
-						}
-						else{
-							javaValue = new BigDecimal(rubyVal.toString());
+						catch (Exception e){
+							throw new KettleException("found non-hash value: "+o.toString()+" in returned array at position: "+i, e);	
 						}
 						
-					break;
-					case ValueMeta.TYPE_DATE:
-						if (rubyVal instanceof RubyFixnum){
-							javaValue = new Date(((RubyFixnum)rubyVal).getLongValue());
-						}
-						else if (rubyVal instanceof RubyTime){
-							javaValue = ((RubyTime)rubyVal).getJavaDate();
-						}
-					break;
-						
-						
+					}
 				}
-
-				r[data.outputRowMeta.indexOfValue(outField.getName())] = javaValue;
 				
 			}
+			// try if the result is convertible to a hash and go from there
+			else{
+				
+				try{
+					RubyHash resultRow = result.convertToHash(); // TODO: provide a meaningful error message if this fails or yields null
+					processOutputHash(r, resultRow);
+				}
+				catch(Exception e){
+					throw new KettleException("script returned non-hash value: "+result.toString()+" as a result ", e);
+				}
+			}
 
-			step.putRow(data.outputRowMeta, r);
  			return true;
 		}
 		else{
