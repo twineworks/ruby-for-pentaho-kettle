@@ -132,9 +132,19 @@ public class SimpleExecutionModel implements ExecutionModel {
 			i++;
 		}
 		
-		// put the data steps into ruby scope
-		
 		data.container.put("$info_steps", infoSteps);
+		
+		// put the target steps into ruby scope
+		RubyHash targetSteps = new RubyHash(data.runtime);
+
+		int t=0;
+		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
+			RowStreamWriter writer = new RowStreamWriter(this, stream.getStepname());
+			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
+			t++;
+		}
+		
+		data.container.put("$target_steps", targetSteps);
 
 	}
 
@@ -190,7 +200,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	private void applyRubyHashToRow(Object[] r, RubyHash resultRow) throws KettleException {
+	protected void applyRubyHashToRow(Object[] r, RubyHash resultRow) throws KettleException {
 
 		// set each field's value from the resultRow
 		for (OutputFieldMeta outField : meta.getOutputFields()) {
@@ -201,52 +211,57 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			// convert simple cases automatically
 			Object javaValue = null;
+			
+			if (!rubyVal.isNil()){
+				
+				switch (outField.getType()) {
+				case ValueMeta.TYPE_BOOLEAN:
+				case ValueMeta.TYPE_INTEGER:
+				case ValueMeta.TYPE_STRING:
+				case ValueMeta.TYPE_NUMBER:
+				case ValueMeta.TYPE_NONE:
+					// TODO: provide a meaningful error message if this fails because the user put something strange in here
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass());
+					break;
+				case ValueMeta.TYPE_SERIALIZABLE:
+					String marshalled = getMarshal().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
+					javaValue = new RubyStepMarshalledObject(marshalled);
+					break;
+				case ValueMeta.TYPE_BINARY:
+					// TODO: provide meaningful error message if this fails
+					RubyArray arr = rubyVal.convertToArray();
 
-			switch (outField.getType()) {
-			case ValueMeta.TYPE_BOOLEAN:
-			case ValueMeta.TYPE_INTEGER:
-			case ValueMeta.TYPE_STRING:
-			case ValueMeta.TYPE_NUMBER:
-			case ValueMeta.TYPE_NONE:
-				// TODO: provide a meaningful error message if this fails because the user put something strange in here
-				javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass());
-				break;
-			case ValueMeta.TYPE_SERIALIZABLE:
-				String marshalled = data.container.parse("Marshal").run().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
-				javaValue = new RubyStepMarshalledObject(marshalled);
-				break;
-			case ValueMeta.TYPE_BINARY:
-				// TODO: provide meaningful error message if this fails
-				RubyArray arr = rubyVal.convertToArray();
-
-				byte[] bytes = new byte[arr.size()];
-				for (int i = 0; i < bytes.length; i++) {
-					Object rItem = arr.get(i);
-					if (rItem instanceof Number) {
-						bytes[i] = ((Number) rItem).byteValue();
-					} else {
-						throw new KettleException("Found a non-number in Binary field " + outField.getName() + ": " + rItem.toString());
+					byte[] bytes = new byte[arr.size()];
+					for (int i = 0; i < bytes.length; i++) {
+						Object rItem = arr.get(i);
+						if (rItem instanceof Number) {
+							bytes[i] = ((Number) rItem).byteValue();
+						} else {
+							throw new KettleException("Found a non-number in Binary field " + outField.getName() + ": " + rItem.toString());
+						}
 					}
-				}
-				javaValue = bytes;
-				break;
-			case ValueMeta.TYPE_BIGNUMBER:
-				if (rubyVal instanceof RubyFloat) {
-					javaValue = new BigDecimal(((Double) rubyVal.toJava(Double.class)).doubleValue());
-				} else {
-					javaValue = new BigDecimal(rubyVal.toString());
-				}
+					javaValue = bytes;
+					break;
+				case ValueMeta.TYPE_BIGNUMBER:
+					if (rubyVal instanceof RubyFloat) {
+						javaValue = new BigDecimal(((Double) rubyVal.toJava(Double.class)).doubleValue());
+					} else {
+						javaValue = new BigDecimal(rubyVal.toString());
+					}
 
-				break;
-			case ValueMeta.TYPE_DATE:
-				if (rubyVal instanceof RubyFixnum) {
-					javaValue = new Date(((RubyFixnum) rubyVal).getLongValue());
-				} else if (rubyVal instanceof RubyTime) {
-					javaValue = ((RubyTime) rubyVal).getJavaDate();
-				}
-				break;
+					break;
+				case ValueMeta.TYPE_DATE:
+					if (rubyVal instanceof RubyFixnum) {
+						javaValue = new Date(((RubyFixnum) rubyVal).getLongValue());
+					} else if (rubyVal instanceof RubyTime) {
+						javaValue = ((RubyTime) rubyVal).getJavaDate();
+					}
+					break;
 
+				}
+				
 			}
+
 			// TODO: optimize this for each field to know its index in advance
 			r[data.outputRowMeta.indexOfValue(outField.getName())] = javaValue;
 
@@ -254,14 +269,14 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	private void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException {
+	protected void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException {
 
 		// skip nil result rows
 		if (rubyObject.isNil()) {
 			return;
 		}
-		// ruby hashes are processed instantly
 
+		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
 			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
 			applyRubyHashToRow(r, (RubyHash) rubyObject);
@@ -279,7 +294,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			return;
 		}
 
-		// at this point the returned object is not null, not a hash and not an array, give up (may use convertToHash in future for convertible objects..)
+		// at this point the returned object is not nil, not a hash and not an array, give up (may use convertToHash in future for convertible objects..)
 		throw new KettleException("script returned non-hash value: " + rubyObject.toString() + " as a result ");
 
 	}
