@@ -5,16 +5,37 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.widgets.Shell;
-import org.pentaho.di.core.*;
+import org.pentaho.di.core.CheckResult;
+import org.pentaho.di.core.CheckResultInterface;
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
-import org.pentaho.di.core.exception.*;
-import org.pentaho.di.core.row.*;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.repository.*;
-import org.pentaho.di.trans.*;
-import org.pentaho.di.trans.step.*;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
+import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepDialogInterface;
+import org.pentaho.di.trans.step.StepIOMeta;
+import org.pentaho.di.trans.step.StepIOMetaInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.errorhandling.Stream;
+import org.pentaho.di.trans.step.errorhandling.StreamIcon;
+import org.pentaho.di.trans.step.errorhandling.StreamInterface.StreamType;
+import org.pentaho.di.trans.steps.userdefinedjavaclass.StepDefinition;
+import org.pentaho.di.trans.steps.userdefinedjavaclass.UserDefinedJavaClassMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
@@ -80,12 +101,42 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 		
 	}
+	
+    public boolean excludeFromRowLayoutVerification(){
+        return true;
+    }	
+	
+	@Override
+    public StepIOMetaInterface getStepIOMeta() {
+
+		StepIOMetaInterface ioMeta = new StepIOMeta(true, true, true, false, !infoSteps.isEmpty(), !targetSteps.isEmpty());
+    	
+    	for (RoleStepMeta step : infoSteps) {
+    		ioMeta.addStream(new Stream(StreamType.INFO, step.getStepMeta(), step.getRoleName(), StreamIcon.INFO, null));
+    	}
+    	for (RoleStepMeta step : targetSteps) {
+    		ioMeta.addStream(new Stream(StreamType.TARGET, step.getStepMeta(), step.getRoleName(), StreamIcon.TARGET, null));
+    	}
+    	
+    	return ioMeta;
+    }
+
+	@Override
+	public void searchInfoAndTargetSteps(List<StepMeta> steps) {
+		for (RoleStepMeta info : infoSteps) {
+			info.setStepMeta(StepMeta.findStep(steps, info.getStepName()));
+		}
+		for (RoleStepMeta target : targetSteps) {
+			target.setStepMeta(StepMeta.findStep(steps, target.getStepName()));
+		}
+	}	
 
 	public void check(List<CheckResultInterface> remarks, TransMeta transmeta, StepMeta stepMeta, RowMetaInterface prev, String input[], String output[], RowMetaInterface info) {
 		CheckResult cr;
 
 		// TODO: check if all updated fields are there
 		// TODO: check if any field is updated even though the incoming fields are cleared
+		// TODO: check that direct input and info input are not mixed (in the dialog too)
 		
 		// See if we have input streams leading to this step!
 		if (input.length > 0) {
@@ -207,6 +258,27 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 		retval.append(TAB).append("</rubyVariables>").append(Const.CR);
 		
+		// save info steps
+		retval.append(TAB).append("<infoSteps>").append(Const.CR);
+		for(RoleStepMeta step : infoSteps){
+			retval.append(TAB).append(TAB).append("<infoStep>").append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("name", step.getStepName()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("role", step.getRoleName()));
+			retval.append(TAB).append(TAB).append("</infoStep>").append(Const.CR);
+		}
+		retval.append(TAB).append("</infoSteps>").append(Const.CR);
+		
+		// save target steps
+		retval.append(TAB).append("<targetSteps>").append(Const.CR);
+		for(RoleStepMeta step : targetSteps){
+			retval.append(TAB).append(TAB).append("<targetStep>").append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("name", step.getStepName()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("role", step.getRoleName()));
+			retval.append(TAB).append(TAB).append("</targetStep>").append(Const.CR);
+		}
+		retval.append(TAB).append("</targetSteps>").append(Const.CR);		
+		
+		
 		
 		return retval.toString();
 	}
@@ -256,6 +328,32 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				rubyVariables.add(new RubyVariableMeta(name, value));
 			}
 			
+			// load info steps
+			infoSteps.clear();
+
+			Node infoStepsNode = XMLHandler.getSubNode(stepnode, "infoSteps");
+			int nrSteps = XMLHandler.countNodes(infoStepsNode, "infoStep");
+			
+			for(int i=0;i<nrSteps;i++){
+				Node sNode = XMLHandler.getSubNodeByNr(infoStepsNode, "infoStep", i);
+				String name = XMLHandler.getTagValue(sNode, "name");
+				String value = XMLHandler.getTagValue(sNode, "role");
+				infoSteps.add(new RoleStepMeta(name, value));
+			}
+			
+			// load target steps
+			targetSteps.clear();
+
+			Node targetStepsNode = XMLHandler.getSubNode(stepnode, "targetSteps");
+			int nrTargetSteps = XMLHandler.countNodes(targetStepsNode, "targetStep");
+			
+			for(int i=0;i<nrTargetSteps;i++){
+				Node sNode = XMLHandler.getSubNodeByNr(targetStepsNode, "targetStep", i);
+				String name = XMLHandler.getTagValue(sNode, "name");
+				String value = XMLHandler.getTagValue(sNode, "role");
+				targetSteps.add(new RoleStepMeta(name, value));
+			}			
+						
 
 		} catch (Exception e) {
 			throw new KettleXMLException("Template Plugin Unable to read step info from XML node", e);
@@ -290,6 +388,18 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				rep.saveStepAttribute(id_transformation, id_step, i, "ruby_variable_name", rubyVariables.get(i).getName());
 				rep.saveStepAttribute(id_transformation, id_step, i, "ruby_variable_value", rubyVariables.get(i).getValue());
 			}
+			
+			// save info steps
+			for(int i=0;i<infoSteps.size();i++){
+				rep.saveStepAttribute(id_transformation, id_step, i, "info_step_name", infoSteps.get(i).getStepName());
+				rep.saveStepAttribute(id_transformation, id_step, i, "info_step_role", infoSteps.get(i).getRoleName());
+			}		
+			
+			// save target steps
+			for(int i=0;i<targetSteps.size();i++){
+				rep.saveStepAttribute(id_transformation, id_step, i, "target_step_name", targetSteps.get(i).getStepName());
+				rep.saveStepAttribute(id_transformation, id_step, i, "target_step_role", targetSteps.get(i).getRoleName());
+			}				
 			
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnableToSaveStepInfoToRepository") + id_step, e);
@@ -338,7 +448,30 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				);
 				rubyVariables.add(var);
 			}
+			
+			// load info steps
+			int nrSteps = rep.countNrStepAttributes(id_step, "info_step_name");
+			infoSteps.clear();
+			
+			for(int i=0;i<nrSteps;i++){
+				RoleStepMeta info = new RoleStepMeta(
+					rep.getStepAttributeString(id_step, i, "info_step_name"),
+					rep.getStepAttributeString(id_step, i, "info_step_role")
+				);
+				infoSteps.add(info);
+			}			
 
+			// load target steps
+			int nrTargetSteps = rep.countNrStepAttributes(id_step, "target_step_name");
+			targetSteps.clear();
+			
+			for(int i=0;i<nrTargetSteps;i++){
+				RoleStepMeta target = new RoleStepMeta(
+					rep.getStepAttributeString(id_step, i, "target_step_name"),
+					rep.getStepAttributeString(id_step, i, "target_step_role")
+				);
+				targetSteps.add(target);
+			}				
 			
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -363,6 +496,13 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		return new RubyStepData();
 	}
 
+	/*------------------------------------------------------------------------------------------------------------------------------------------------
+	 * Convenience Methods 	
+	 ------------------------------------------------------------------------------------------------------------------------------------------------*/
+	public boolean hasDirectInput(){
+		return !this.getParentStepMeta().getParentTransMeta().findPreviousSteps(this.getParentStepMeta(), false).isEmpty();
+	}
+	
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Getters and Setters 	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/

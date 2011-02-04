@@ -2,6 +2,8 @@ package org.typeexit.kettle.plugin.steps.ruby.execmodels;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.jruby.RubyArray;
@@ -15,6 +17,8 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
+import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
@@ -62,6 +66,9 @@ public class SimpleExecutionModel implements ExecutionModel{
 			// FIXME: fix this when we know how to support multiple script tabs
 			data.rubyScriptObject = data.container.parse(meta.getScripts().get(0).getScript(), 0);
 			
+			// temporary place for the output a script might produce
+			data.rowList = new LinkedList<Object[]>();
+			
 		}
 		catch(Exception e){
 			step.logError("Error Initializing Ruby Scripting Step", e);
@@ -104,21 +111,80 @@ public class SimpleExecutionModel implements ExecutionModel{
 	
 	private void onRowStreamInit(){
 
-		data.inputRowMeta = step.getInputRowMeta().clone();
+		// steps inputRowMeta might be null in case we have info steps only, or there's no input to begin with
+		RowMetaInterface inputRowMeta = step.getInputRowMeta();
+		if(inputRowMeta == null){
+			inputRowMeta = new RowMeta();
+		}
+		
+		data.inputRowMeta = inputRowMeta.clone();
 		data.inputFieldNames = data.inputRowMeta.getFieldNames();
 
-		data.outputRowMeta = step.getInputRowMeta().clone();
+		data.outputRowMeta = inputRowMeta.clone();
 		meta.getFields(data.outputRowMeta, step.getStepname(), null, null, step);
 
 		// TODO: row stream is ready, nothing to do.. well... should maybe initialize info / target steps 
 		
 	}
 	
-	private void processOutputHash(Object[] r, RubyHash resultRow) throws KettleException{
+	private RubyHash createRubyInputRow(Object[] r) {
+		// create a hash from the row
+		RubyHash rubyRow = new RubyHash(data.runtime); 
+
+		// TODO: optimize this in letting the user decide which fields to insert (it makes a difference for serializable and binary types), user should maybe also choose which object to pass (Adapted Java Object or native ruby type)
+		// TODO: May be further optimized by deferring the conversion selection for each field, maybe not 
+		// put the field values into the row
+		for(int i=0;i<data.inputFieldNames.length;i++){
+	
+			switch(data.inputRowMeta.getValueMeta(i).getType()){
+				case ValueMeta.TYPE_BOOLEAN:
+				case ValueMeta.TYPE_INTEGER:
+				case ValueMeta.TYPE_STRING:
+				case ValueMeta.TYPE_NUMBER:
+				case ValueMeta.TYPE_NONE:
+					rubyRow.put(data.inputFieldNames[i], r[i]);
+					break;
+				case ValueMeta.TYPE_SERIALIZABLE:
+					if (r[i] instanceof RubyStepMarshalledObject){
+						Object restoredObject = getMarshal().callMethod(data.runtime.getCurrentContext(), "restore", data.runtime.newString(r[i].toString()));
+						rubyRow.put(data.inputFieldNames[i], restoredObject);
+					}
+					else{
+						// try to put the object in there as it is.. should create a nice adapter for the java object
+						rubyRow.put(data.inputFieldNames[i], r[i]);
+					}
+					break;
+				case ValueMeta.TYPE_BINARY:
+					// put a ruby array with bytes in there, that is expensive and should be avoided
+					rubyRow.put(data.inputFieldNames[i], 
+							data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) r[i])))
+					);
+				break;
+				
+				case ValueMeta.TYPE_BIGNUMBER:
+					IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(((BigDecimal) r[i]).toString()));
+					rubyRow.put(data.inputFieldNames[i], bigDecimalObject);
+				break;
+				
+				case ValueMeta.TYPE_DATE:
+					rubyRow.put(data.inputFieldNames[i], data.runtime.newTime(((Date)r[i]).getTime()));
+				break;
+
+			}
+			
+		}
+		
+		return rubyRow;
+		
+	}	
+
+	private void applyRubyHashToRow(Object[] r, RubyHash resultRow) throws KettleException{
 		
 		// set each field's value from the resultRow
 		for (OutputFieldMeta outField : meta.getOutputFields()) {
-			
+
+			// TODO: the ruby strings for field names can be cached and reused
+			// TODO: test what happens if nil values come for each type
 			IRubyObject rubyVal = resultRow.fastARef(JavaEmbedUtils.javaToRuby(data.runtime, outField.getName()));
 			
 			// convert simple cases automatically
@@ -138,7 +204,9 @@ public class SimpleExecutionModel implements ExecutionModel{
 					javaValue = new RubyStepMarshalledObject(marshalled); 
 				break;
 				case ValueMeta.TYPE_BINARY:
-					RubyArray arr = rubyVal.convertToArray(); // TODO: provide meaningful error message if this fails
+					// TODO: provide meaningful error message if this fails
+					RubyArray arr = rubyVal.convertToArray(); 
+					
 					byte[] bytes = new byte[arr.size()];
 					for(int i=0;i<bytes.length;i++){
 						Object rItem = arr.get(i);
@@ -176,134 +244,122 @@ public class SimpleExecutionModel implements ExecutionModel{
 			
 		}
 
-		step.putRow(data.outputRowMeta, r);		
+	}	
+	
+	private void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException{
+		
+		// skip nil result rows
+		if (rubyObject.isNil()){
+			return;
+		}
+		// ruby hashes are processed instantly
+		
+		if (rubyObject instanceof RubyHash){
+			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
+			applyRubyHashToRow(r, (RubyHash) rubyObject);
+			rowList.add(r);
+			return;
+		}
+		
+		// arrays are handled recursively:
+		if (rubyObject instanceof RubyArray){
+			RubyArray rubyArray = (RubyArray) rubyObject;
+			int length = rubyArray.getLength();
+			for(int i=0;i<length;i++){
+				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList);
+			}
+			return;
+		}
+
+		// at this point the returned object is not null, not a hash and not an array, give up (may use convertToHash in future for convertible objects..)
+		throw new KettleException("script returned non-hash value: "+rubyObject.toString()+" as a result ");
+		
 		
 	}
 	
 	@Override
 	public boolean onProcessRow() throws KettleException {
 
-		Object[] r = step.getRow();
 		
-		// only now is the metadata available
-		if(step.first){
-			onRowStreamInit();
-			step.first = false;
+		// as calls to getRow() would yield rows from indeterminate sources unless
+		// all info streams have been emptied first
+		// we opt to enforce to have all info steps or no info steps
+		// TODO: since mixed layouts always imply that all rows are read from info first, we could implement that as well, other steps must do that too (at least with 4.x API)
+		// 	
+		Object[] r = null;
+		
+		if (step.first){
+			data.hasDirectInput = meta.hasDirectInput();
 		}
-		
-		// get the next row 
-		if (r != null){
 
-			// make sure the row can hold the results
-			r = RowDataUtil.resizeArray(r, data.outputRowMeta.size());
+		// directinput 
+		if (data.hasDirectInput){
 			
-			// create a hash from the row
-			RubyHash rubyRow = new RubyHash(data.runtime); 
+			r = step.getRow();	
+			// only now is the metadata available 
+			if(step.first){
+				onRowStreamInit();
+				step.first = false;
+			}
+			
+			// get the next row 
+			if (r != null){
 
-			// TODO: optimize this in letting the user decide which fields to insert (it makes a difference for serializable and binary types), user should maybe also choose which object to pass (Adapted Java Object or native ruby type)
-			// TODO: May be further optimized by deferring the conversion selection for each field, maybe not 
-			// put the field values into the row
-			for(int i=0;i<data.inputFieldNames.length;i++){
-		
-				switch(data.inputRowMeta.getValueMeta(i).getType()){
-					case ValueMeta.TYPE_BOOLEAN:
-					case ValueMeta.TYPE_INTEGER:
-					case ValueMeta.TYPE_STRING:
-					case ValueMeta.TYPE_NUMBER:
-					case ValueMeta.TYPE_NONE:
-						rubyRow.put(data.inputFieldNames[i], r[i]);
-						break;
-					case ValueMeta.TYPE_SERIALIZABLE:
-						if (r[i] instanceof RubyStepMarshalledObject){
-							Object restoredObject = getMarshal().callMethod(data.runtime.getCurrentContext(), "restore", data.runtime.newString(r[i].toString()));
-							rubyRow.put(data.inputFieldNames[i], restoredObject);
-						}
-						else{
-							// try to put the object in there as it is.. should create a nice adapter for the java object
-							rubyRow.put(data.inputFieldNames[i], r[i]);
-						}
-						break;
-					case ValueMeta.TYPE_BINARY:
-						// put a ruby array with bytes in there, that is expensive and should be avoided
-						rubyRow.put(data.inputFieldNames[i], 
-								data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) r[i])))
-						);
-					break;
-					
-					case ValueMeta.TYPE_BIGNUMBER:
-						IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(((BigDecimal) r[i]).toString()));
-						rubyRow.put(data.inputFieldNames[i], bigDecimalObject);
-					break;
-					
-					case ValueMeta.TYPE_DATE:
-						rubyRow.put(data.inputFieldNames[i], data.runtime.newTime(((Date)r[i]).getTime()));
-					break;
-
-				}
+				RubyHash rubyRow = createRubyInputRow(r);
 				
-			}
-			
-			// put the row into the container
-			data.container.put("$row", rubyRow);
-			
-			// run the script, the result should give a ruby hash
-			IRubyObject result = data.rubyScriptObject.run();
-
-			// skip nil result rows
-			if (result.isNil()){
-				// skip row
-			}
-			// ruby hashes are processed instantly
-			else if (result instanceof RubyHash){
-				processOutputHash(r, (RubyHash) result);	
-			}
-			// arrays may contain:
-			// nil values -> skipped row
-			// hashes or anything convertible to hash -> write row
-			else if (result instanceof RubyArray){
-				RubyArray resultArray = (RubyArray) result;
-				int length = resultArray.getLength();
-				for(int i=0;i<length;i++){
-					IRubyObject o = resultArray.entry(i);
-					if (o instanceof RubyHash){
-						processOutputHash(r, (RubyHash) o);
-					}
-					else if (o.isNil()){
-						// skip row
-					}
-					else{
-						try{
-							RubyHash resultRow = o.convertToHash(); // TODO: test this and provide a meaningful error message if this fails or yields null
-							processOutputHash(r, resultRow);
-						}
-						catch (Exception e){
-							throw new KettleException("found non-hash value: "+o.toString()+" in returned array at position: "+i, e);	
-						}
-						
-					}
-				}
+				// put the row into the container
+				data.container.put("$row", rubyRow);
 				
+				// run the script, the result is one or more rows
+				IRubyObject scriptResult = data.rubyScriptObject.run();
+
+				data.rowList.clear();
+				fetchRowsFromScriptOutput(scriptResult, r, data.rowList);
+				
+				// now if the script has output rows, write them to the main output stream
+				for(Object[] outrow : data.rowList){
+					step.putRow(data.outputRowMeta, outrow);	
+				}
+
+	 			return true;
 			}
-			// try if the result is convertible to a hash and go from there
 			else{
-				
-				try{
-					RubyHash resultRow = result.convertToHash(); // TODO: provide a meaningful error message if this fails or yields null
-					processOutputHash(r, resultRow);
-				}
-				catch(Exception e){
-					throw new KettleException("script returned non-hash value: "+result.toString()+" as a result ", e);
-				}
-			}
-
- 			return true;
+				// no more rows coming in
+				step.setOutputDone();
+				return false;
+			}			
+			
+			
 		}
+
+		// no direct input means the script is not getting an input row and is executed exactly once
 		else{
-			// no more rows coming in
+			if(step.first){
+				onRowStreamInit();
+				step.first = false;
+			}
+			r = new Object[data.outputRowMeta.size()];
+			
+			// run the script, the result is one or more rows
+			IRubyObject scriptResult = data.rubyScriptObject.run();
+
+			data.rowList.clear();
+			fetchRowsFromScriptOutput(scriptResult, r, data.rowList);
+			
+			// now if the script has output rows, write them to the main output stream
+			for(Object[] outrow : data.rowList){
+				step.putRow(data.outputRowMeta, outrow);	
+			}
+			
 			step.setOutputDone();
 			return false;
 		}
+		
+		
+
 	}
+
+
 
 
 }

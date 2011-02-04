@@ -49,6 +49,7 @@ import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 
@@ -625,6 +626,26 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		}
 		wScopeVariables.optWidth(true);
 		wScopeVariables.setRowNums();
+		
+		// load info steps
+		int infoNum = 0;
+		for(RoleStepMeta step : input.getInfoSteps()){
+			TableItem row = wInfoSteps.table.getItem(infoNum++);
+			row.setText(1, step.getRoleName());
+			row.setText(2, step.getStepName());
+		}
+		wInfoSteps.optWidth(true);
+		wInfoSteps.setRowNums();
+		
+		// load target steps
+		int targetNum = 0;
+		for(RoleStepMeta step : input.getTargetSteps()){
+			TableItem row = wTargetSteps.table.getItem(targetNum++);
+			row.setText(1, step.getRoleName());
+			row.setText(2, step.getStepName());
+		}
+		wTargetSteps.optWidth(true);
+		wTargetSteps.setRowNums();		
 
 	}
 
@@ -673,7 +694,29 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			TableItem t = wScopeVariables.getNonEmpty(i);
 			rubyVars.add(new RubyVariableMeta(t.getText(1), t.getText(2)));
 		}
+		
+		// generate info steps
+		List<RoleStepMeta> infoSteps = input.getInfoSteps();
+		infoSteps.clear();
+		
+		int infoCount = wInfoSteps.nrNonEmpty();
+		for(int i=0;i<infoCount;i++){
+			TableItem t = wInfoSteps.getNonEmpty(i);
+			infoSteps.add(new RoleStepMeta(t.getText(2), t.getText(1)));
+		}
 
+		// generate target steps
+		List<RoleStepMeta> targetSteps = input.getTargetSteps();
+		targetSteps.clear();
+		
+		int targetCount = wTargetSteps.nrNonEmpty();
+		for(int i=0;i<targetCount;i++){
+			TableItem t = wTargetSteps.getNonEmpty(i);
+			targetSteps.add(new RoleStepMeta(t.getText(2), t.getText(1)));
+		}		
+		
+		// make sure the input finds its info and target step metas alright
+		input.searchInfoAndTargetSteps(transMeta.getSteps());
 		dispose();
 	}
 
