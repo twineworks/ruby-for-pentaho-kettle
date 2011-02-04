@@ -56,6 +56,7 @@ public class RowStreamReader {
 			IRubyObject o = read();
 			if (o.isNil()) break;
 			arr.append(o);
+			read++;
 		}
 		
 		// request to read from empty stream
