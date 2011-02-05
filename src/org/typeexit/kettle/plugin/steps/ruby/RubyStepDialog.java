@@ -39,6 +39,8 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
+import org.pentaho.di.core.plugins.PluginRegistry;
+import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
@@ -94,20 +96,19 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private CTabFolder wBottomFolder;
 
 	private String[] prevStepNames;
-
-	private TableView wScopeVariables;
-
-	private TableView wInfoSteps;
-
-	private TableView wTargetSteps;
-
 	private String[] nextStepNames;
 
-	private Image scriptImage;
+	private TableView wScopeVariables;
+	private TableView wInfoSteps;
+	private TableView wTargetSteps;
 
+	private Image scriptImage;
+	private Image rubyImage;
 	private Image checkImage;
+
 	
 	final private String[] NO_YES = new String[2];
+
 
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
@@ -143,8 +144,28 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		int middle = props.getMiddlePct();
 		
-		scriptImage = guiResource.getImage("ui/images/eScript.png");
-		checkImage = guiResource.getImage("ui/images/check.png");
+		
+		// load images
+		if (!guiResource.getImageMap().containsKey("TypeExitRubyStep:empty16x16")){
+			guiResource.getImageMap().put("TypeExitRubyStep:empty16x16", new Image(display, 16, 16));			
+		}
+
+		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
+
+		try{
+			
+			scriptImage 	= guiResource.getImage(pluginBaseDir+("/images/libScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			checkImage 		= guiResource.getImage(pluginBaseDir+("/images/check.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			rubyImage 		= guiResource.getImage(pluginBaseDir+("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
+		}
+		catch(Exception e){
+			Image empty 	= guiResource.getImage("TypeExitRubyStep:empty16x16");
+			scriptImage 	= empty;
+			checkImage 		= empty;
+			rubyImage 		= empty;
+		}
+		
+		// start construction
 
 		// Stepname line
 		wlStepname = new Label(shell, SWT.RIGHT);
@@ -525,6 +546,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.setSimple(false);
 		wScriptsFolder.setUnselectedImageVisible(true);
 		wScriptsFolder.setUnselectedCloseVisible(true);
+		
 		props.setLook(wScriptsFolder);
 		styleTabFolder(wScriptsFolder);
 		
@@ -808,6 +830,11 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		CTabItem item = new CTabItem(wScriptsFolder, SWT.CLOSE);
 		item.setText(script.getTitle());
+		
+		if (wScriptsFolder.getItemCount() == 1){
+			item.setImage(rubyImage);	
+		}
+		
 		StyledTextComp wScript = new StyledTextComp(item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
 		wScript.setText(script.getScript());
 
