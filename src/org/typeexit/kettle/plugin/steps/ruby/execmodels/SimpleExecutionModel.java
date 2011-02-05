@@ -20,6 +20,7 @@ import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
@@ -28,6 +29,10 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepMarshalledObject;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamReader;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamWriter;
 
 public class SimpleExecutionModel implements ExecutionModel {
 
@@ -127,7 +132,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		int i=0;
 		for (StreamInterface stream : meta.getStepIOMeta().getInfoStreams()) {
-			RowStreamReader reader = new RowStreamReader(this, stream.getStepname());
+			StepStreamReader reader = new StepStreamReader(this, stream.getStepname());
 			infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), reader);
 			i++;
 		}
@@ -139,16 +144,20 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		int t=0;
 		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
-			RowStreamWriter writer = new RowStreamWriter(this, stream.getStepname());
+			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
 			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
 			t++;
 		}
 		
 		data.container.put("$target_steps", targetSteps);
+		
+		// put the standard streams into scope
+		data.container.put("$output", new StdStreamWriter(this));
+		data.container.put("$input", new StdStreamReader(this));
 
 	}
 
-	protected RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) {
+	public RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) {
 		// create a hash from the row
 		RubyHash rubyRow = new RubyHash(data.runtime);
 
@@ -200,9 +209,10 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	protected void applyRubyHashToRow(Object[] r, RubyHash resultRow) throws KettleException {
-
+	private void applyRubyHashToRow(Object[] r, RubyHash resultRow, List<ValueMetaInterface> forFields) throws KettleException {
+		
 		// set each field's value from the resultRow
+		
 		for (OutputFieldMeta outField : meta.getOutputFields()) {
 
 			// TODO: the ruby strings for field names can be cached and reused
@@ -212,6 +222,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			// convert simple cases automatically
 			Object javaValue = null;
 			
+			// for nil values just put null into the row
 			if (!rubyVal.isNil()){
 				
 				switch (outField.getType()) {
@@ -219,8 +230,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 				case ValueMeta.TYPE_INTEGER:
 				case ValueMeta.TYPE_STRING:
 				case ValueMeta.TYPE_NUMBER:
-				case ValueMeta.TYPE_NONE:
-					// TODO: provide a meaningful error message if this fails because the user put something strange in here
+					// TODO: provide a meaningful error message if this fails because the user put something strange in here (maybe handle strings differently by calling to_s)
 					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass());
 					break;
 				case ValueMeta.TYPE_SERIALIZABLE:
@@ -269,7 +279,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	protected void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException {
+	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException {
 
 		// skip nil result rows
 		if (rubyObject.isNil()) {
@@ -279,7 +289,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
 			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
-			applyRubyHashToRow(r, (RubyHash) rubyObject);
+			applyRubyHashToRow(r, (RubyHash) rubyObject, data.outputRowMeta.getValueMetaList());
 			rowList.add(r);
 			return;
 		}
@@ -305,12 +315,14 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// as calls to getRow() would yield rows from indeterminate sources unless
 		// all info streams have been emptied first
 		// we opt to enforce to have all info steps or no info steps
-		// TODO: since mixed layouts always imply that all rows are read from info first, we could implement that as well, other steps must do that too (at least with 4.x API)
 
 		Object[] r = null;
 
 		if (step.first) {
 			data.hasDirectInput = meta.hasDirectInput();
+
+			// TODO: since mixed layouts always imply that all rows are read from info first, we could implement that as well, other steps must do that too (at least with 4.x API)
+
 		}
 
 		// directinput means, there's no info steps and at least one step providing data

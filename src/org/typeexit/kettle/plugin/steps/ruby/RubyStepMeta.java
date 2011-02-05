@@ -34,8 +34,6 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.errorhandling.Stream;
 import org.pentaho.di.trans.step.errorhandling.StreamIcon;
 import org.pentaho.di.trans.step.errorhandling.StreamInterface.StreamType;
-import org.pentaho.di.trans.steps.userdefinedjavaclass.StepDefinition;
-import org.pentaho.di.trans.steps.userdefinedjavaclass.UserDefinedJavaClassMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
@@ -499,8 +497,14 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Convenience Methods 	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/
+	// returns true if the step has direct input sources (does not consider info steps as input)
 	public boolean hasDirectInput(){
 		return !this.getParentStepMeta().getParentTransMeta().findPreviousSteps(this.getParentStepMeta(), false).isEmpty();
+	}
+	
+	// returns true if the step has direct input sources as well as info steps attached
+	public boolean hasMixedInput(){
+		return hasDirectInput() && !infoSteps.isEmpty();
 	}
 	
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
