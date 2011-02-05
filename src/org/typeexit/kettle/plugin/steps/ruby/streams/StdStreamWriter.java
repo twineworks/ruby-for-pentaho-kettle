@@ -16,6 +16,7 @@ public class StdStreamWriter {
 	private SimpleExecutionModel model;
 	private RubyStepData data;
 	private List<Object[]> rowList;
+	private int rowSize; 
 	
 	public StdStreamWriter(SimpleExecutionModel model) throws KettleStepException{
 		
@@ -23,20 +24,20 @@ public class StdStreamWriter {
 		this.step = model.getStep();
 		this.data = model.getData();
 		this.rowList = new LinkedList<Object[]>();
+		
+		rowSize = data.outputRowMeta.size();
 		 
 	}
 	
 	public void write(IRubyObject rubyOut) throws KettleException{
 		
-		// TODO: optimize the call to size() away
-		Object[] r = new Object[data.outputRowMeta.size()];
+		Object[] r = new Object[rowSize];
 		
 		rowList.clear();
-		model.fetchRowsFromScriptOutput(rubyOut, r, rowList);
+		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.outputRowMeta.getValueMetaList());
 
 		for(Object[] outRow : rowList){
 			step.putRow(data.outputRowMeta, outRow);
-			step.incrementLinesWritten();
 		}
 		
 	}

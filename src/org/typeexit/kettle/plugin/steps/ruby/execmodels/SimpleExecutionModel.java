@@ -212,8 +212,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 	private void applyRubyHashToRow(Object[] r, RubyHash resultRow, List<ValueMetaInterface> forFields) throws KettleException {
 		
 		// set each field's value from the resultRow
-		
-		for (OutputFieldMeta outField : meta.getOutputFields()) {
+		for (ValueMetaInterface outField : forFields) {
 
 			// TODO: the ruby strings for field names can be cached and reused
 			// TODO: test what happens if nil values come for each type
@@ -223,15 +222,23 @@ public class SimpleExecutionModel implements ExecutionModel {
 			Object javaValue = null;
 			
 			// for nil values just put null into the row
-			if (!rubyVal.isNil()){
+			if (rubyVal != null && !rubyVal.isNil()){
+
+				// TODO: provide a meaningful error message if conversion fails because the user put
+				// something strange in here (maybe handle strings differently by calling to_s)
 				
 				switch (outField.getType()) {
 				case ValueMeta.TYPE_BOOLEAN:
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Boolean.class);
+					break;
 				case ValueMeta.TYPE_INTEGER:
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Long.class);
+					break;
 				case ValueMeta.TYPE_STRING:
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, String.class);
+					break;
 				case ValueMeta.TYPE_NUMBER:
-					// TODO: provide a meaningful error message if this fails because the user put something strange in here (maybe handle strings differently by calling to_s)
-					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, outField.getConversionClass());
+					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Double.class);
 					break;
 				case ValueMeta.TYPE_SERIALIZABLE:
 					String marshalled = getMarshal().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
@@ -279,7 +286,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList) throws KettleException {
+	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList, List<ValueMetaInterface> forFields) throws KettleException {
 
 		// skip nil result rows
 		if (rubyObject.isNil()) {
@@ -289,7 +296,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
 			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
-			applyRubyHashToRow(r, (RubyHash) rubyObject, data.outputRowMeta.getValueMetaList());
+			applyRubyHashToRow(r, (RubyHash) rubyObject, forFields);
 			rowList.add(r);
 			return;
 		}
@@ -299,7 +306,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			RubyArray rubyArray = (RubyArray) rubyObject;
 			int length = rubyArray.getLength();
 			for (int i = 0; i < length; i++) {
-				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList);
+				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList, forFields);
 			}
 			return;
 		}
@@ -348,12 +355,11 @@ public class SimpleExecutionModel implements ExecutionModel {
 				IRubyObject scriptResult = data.rubyScriptObject.run();
 
 				data.rowList.clear();
-				fetchRowsFromScriptOutput(scriptResult, r, data.rowList);
+				fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields());
 
 				// now if the script has output rows, write them to the main output stream
 				for (Object[] outrow : data.rowList) {
 					step.putRow(data.outputRowMeta, outrow);
-					step.incrementLinesWritten();
 				}
 
 				return true;
@@ -377,12 +383,11 @@ public class SimpleExecutionModel implements ExecutionModel {
 			IRubyObject scriptResult = data.rubyScriptObject.run();
 
 			data.rowList.clear();
-			fetchRowsFromScriptOutput(scriptResult, r, data.rowList);
+			fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields());
 
 			// now if the script has output rows, write them to the main output stream
 			for (Object[] outrow : data.rowList) {
 				step.putRow(data.outputRowMeta, outrow);
-				step.incrementLinesWritten();
 			}
 
 			step.setOutputDone();

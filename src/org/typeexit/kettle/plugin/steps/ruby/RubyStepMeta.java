@@ -50,6 +50,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	private List<RoleStepMeta> targetSteps;
 	private List<OutputFieldMeta> outputFields;
 	private List<RubyVariableMeta> rubyVariables;
+	private List<ValueMetaInterface> affectedFields;
 	private boolean clearInputFields;
 
 	public RubyStepMeta() {
@@ -62,16 +63,19 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 	public void getFields(RowMetaInterface r, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) {
-		// do not change row structure
+		
+		affectedFields = new ArrayList<ValueMetaInterface>(outputFields.size());
+		
 		if (clearInputFields){
 			r.clear();
 		}
+		
 		for (OutputFieldMeta field : outputFields) {
 
 			if (field.isUpdate()){
 				// no updates possible if all fields have been cleared before
 				if (clearInputFields){
-					throw new IllegalStateException("Field "+field.getName()+" cannot be updated because all input fields are requested to be removed!");	
+					throw new IllegalStateException("Field "+field.getName()+" cannot be updated because all input fields were requested to be removed!");	
 				}
 				
 				// have a look at the existing field
@@ -85,15 +89,26 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				ValueMetaInterface v = r.getValueMeta(idx);
 				if (v.getType() != field.getType()){
 					// this field needs to be converted to another type
-					ValueMeta newValueMeta = new ValueMeta(field.getName(), field.getType());
+					ValueMetaInterface newValueMeta = new ValueMeta(field.getName(), field.getType());
+					newValueMeta.setOrigin(origin);
 					r.setValueMeta(idx, newValueMeta);
 				}
+				
+				// add the field to affected fields
+				affectedFields.add(r.getValueMeta(idx));				
 				
 			}
 			else{
 				// new field
-				ValueMeta v = new ValueMeta(field.getName(), field.getType());
+				ValueMetaInterface v = new ValueMeta(field.getName(), field.getType());
+				v.setOrigin(origin);
 				r.addValueMeta(v);
+				
+				// add the last to affected fields (might have been renamed)
+				v = r.getValueMetaList().get(r.getValueMetaList().size()-1);
+				field.setName(v.getName());
+				affectedFields.add(v);
+				
 			}
 			
 		}
@@ -134,7 +149,6 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
 		// TODO: check if all updated fields are there
 		// TODO: check if any field is updated even though the incoming fields are cleared
-		// TODO: check that direct input and info input are not mixed (in the dialog too)
 		
 		// See if we have input streams leading to this step!
 		if (input.length > 0) {
@@ -557,6 +571,10 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
 	public void setClearInputFields(boolean clearInputFields) {
 		this.clearInputFields = clearInputFields;
+	}
+
+	public List<ValueMetaInterface> getAffectedFields() {
+		return affectedFields;
 	}
 
 }

@@ -8,7 +8,6 @@ import org.pentaho.di.trans.step.BaseStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
-// TODO: consider moving this to an inner class of the execution model
 public class StdStreamReader {
 	
 	private BaseStep step;
@@ -32,7 +31,6 @@ public class StdStreamReader {
 			return data.runtime.getNil();
 		}
 		
-		step.incrementLinesRead();
 		IRubyObject rubyRow = model.createRubyInputRow(data.inputRowMeta, r);
 		return rubyRow;
 	}
