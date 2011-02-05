@@ -28,7 +28,6 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepFactory;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMarshalledObject;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
-import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.typeexit.kettle.plugin.steps.ruby.streams.BufferStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
@@ -65,6 +64,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
+			data.container.put("$trans", step.getDispatcher());
 
 			// put all variables into scope
 			for (RubyVariableMeta var : meta.getRubyVariables()) {
@@ -202,9 +202,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			// for nil values just put null into the row
 			if (rubyVal != null && !rubyVal.isNil()){
 
-				// TODO: provide a meaningful error message if conversion fails because the user put
-				// something strange in here (maybe handle strings differently by calling to_s)
-				
+				// TODO: provide a meaningful error message if conversion fails because the user put non-convertible results in there (like a string saying "true"/"false" for the bool type)
 				switch (outField.getType()) {
 				case ValueMeta.TYPE_BOOLEAN:
 					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Boolean.class);
@@ -213,7 +211,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Long.class);
 					break;
 				case ValueMeta.TYPE_STRING:
-					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, String.class);
+					javaValue = rubyVal.toString();
 					break;
 				case ValueMeta.TYPE_NUMBER:
 					javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Double.class);

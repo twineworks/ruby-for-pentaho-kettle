@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
@@ -526,6 +527,24 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.setUnselectedCloseVisible(true);
 		props.setLook(wScriptsFolder);
 		styleTabFolder(wScriptsFolder);
+		
+		// confirms closing script tabs, and will never close the last one
+		wScriptsFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
+			public void close(CTabFolderEvent event) {
+		    	CTabItem cItem = (CTabItem)event.item;
+		    	event.doit=false;
+		    	if(cItem!=null && wScriptsFolder.getItemCount()>1){
+		    		MessageBox messageBox = new MessageBox(shell, SWT.ICON_QUESTION | SWT.NO | SWT.YES);
+		    		messageBox.setText(BaseMessages.getString(PKG, "RubyStepDialog.DeleteItem.Label"));
+		    		messageBox.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.ConfirmDeleteItem.Label",cItem.getText()));
+		            switch(messageBox.open()){
+		            	case SWT.YES:
+		            		event.doit=true;
+		            		break;
+		            }
+		    	}
+			}
+		});		
 
 		// toolbar below the script window
 		wScriptToolBar = new ToolBar(wTopRight, SWT.FLAT | SWT.RIGHT);
