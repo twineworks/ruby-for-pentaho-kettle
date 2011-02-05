@@ -2,40 +2,44 @@ package org.typeexit.kettle.plugin.steps.ruby.streams;
 
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.trans.step.BaseStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
-public class StdStreamReader {
+/**
+ * Instances of StepStreamReader are designed to be used from within ruby scripts. 
+ * They are primarily used to read from info streams.
+ */
+
+
+public class BufferStreamReader {
 	
-	private BaseStep step;
-	private SimpleExecutionModel model;
+//	private BaseStep step;
+//	private SimpleExecutionModel model;
 	private RubyStepData data;
+	private RubyArray buffer;
+	private long readPointer;
 	
-	public StdStreamReader(SimpleExecutionModel model) throws KettleStepException{
+	public BufferStreamReader(SimpleExecutionModel model, RubyArray buffer) throws KettleStepException{
 		
-		this.model = model;
-		this.step = model.getStep();
+//		this.model = model;
+//		this.step = model.getStep();
 		this.data = model.getData();
+		
+		this.buffer = buffer;
+		
+		readPointer = 0;
 		 
 	}
-	
-	public IRubyObject read() throws KettleException{
+	 
+	public IRubyObject read(){
 		
-		Object r[] = step.getRow();
-
-		// signal that there's no more rows coming
-		if (r == null){
-			return data.runtime.getNil();
-		}
-		
-		IRubyObject rubyRow = model.createRubyInputRow(data.inputRowMeta, r);
-		return rubyRow;
+		IRubyObject row = buffer.entry(readPointer); 
+		readPointer += 1;
+		return row;
 	}
 
-	public IRubyObject read(long upTo) throws KettleException{
+	public IRubyObject read(long upTo){
 		
 		// request to read <0 rows
 		if (upTo < 0) return data.runtime.getNil();
@@ -56,7 +60,7 @@ public class StdStreamReader {
 	
 	}
 	
-	public RubyArray readAll() throws KettleException{
+	public RubyArray readAll(){
 		
 		RubyArray arr = data.runtime.newArray();
 		

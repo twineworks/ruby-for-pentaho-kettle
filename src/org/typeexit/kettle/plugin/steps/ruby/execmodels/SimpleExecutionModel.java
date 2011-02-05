@@ -16,6 +16,7 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -29,6 +30,7 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepMarshalledObject;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
+import org.typeexit.kettle.plugin.steps.ruby.streams.BufferStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamReader;
@@ -113,7 +115,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		return bigDecimal;
 	}
 
-	private void onRowStreamInit() throws KettleException {
+	private void initMainRowStream() throws KettleException {
 
 		// steps inputRowMeta might be null in case we have info steps only, or there's no input to begin with
 		RowMetaInterface inputRowMeta = step.getInputRowMeta();
@@ -127,38 +129,15 @@ public class SimpleExecutionModel implements ExecutionModel {
 		data.outputRowMeta = inputRowMeta.clone();
 		meta.getFields(data.outputRowMeta, step.getStepname(), null, null, step);
 
-		// put the info steps into ruby scope
-		RubyHash infoSteps = new RubyHash(data.runtime);
-
-		int i=0;
-		for (StreamInterface stream : meta.getStepIOMeta().getInfoStreams()) {
-			StepStreamReader reader = new StepStreamReader(this, stream.getStepname());
-			infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), reader);
-			i++;
-		}
-		
-		data.container.put("$info_steps", infoSteps);
-		
-		// put the target steps into ruby scope
-		RubyHash targetSteps = new RubyHash(data.runtime);
-
-		int t=0;
-		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
-			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
-			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
-			t++;
-		}
-		
-		data.container.put("$target_steps", targetSteps);
-		
-		// put the standard streams into scope
+		// put the standard streams into ruby scope
 		data.container.put("$output", new StdStreamWriter(this));
 		data.container.put("$input", new StdStreamReader(this));
 
 	}
 
 	public RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) {
-		// create a hash from the row
+
+		// create a hash for the row, they are not reused on purpose, so the scripting user can safely use them to store entire rows between calls
 		RubyHash rubyRow = new RubyHash(data.runtime);
 
 		// TODO: optimize this in letting the user decide which fields to insert (it makes a difference for serializable and binary types), user should maybe also choose which object to pass (Adapted Java Object or native ruby type)
@@ -186,7 +165,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 				}
 				break;
 			case ValueMeta.TYPE_BINARY:
-				// put a ruby array with bytes in there, that is expensive and should be avoided
+				// put a ruby array with bytes in there, that is expensive and should probably be avoided
 				rubyRow.put(fieldNames[i],
 							data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) r[i])))
 						);
@@ -215,7 +194,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 		for (ValueMetaInterface outField : forFields) {
 
 			// TODO: the ruby strings for field names can be cached and reused
-			// TODO: test what happens if nil values come for each type
 			IRubyObject rubyVal = resultRow.fastARef(JavaEmbedUtils.javaToRuby(data.runtime, outField.getName()));
 
 			// convert simple cases automatically
@@ -327,9 +305,8 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		if (step.first) {
 			data.hasDirectInput = meta.hasDirectInput();
-
-			// TODO: since mixed layouts always imply that all rows are read from info first, we could implement that as well, other steps must do that too (at least with 4.x API)
-
+			// this must be done before the first call to getRow() in case there are info streams present
+			initSupplementRowStreams();
 		}
 
 		// directinput means, there's no info steps and at least one step providing data
@@ -339,7 +316,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			// only now is the metadata available 
 			if (step.first) {
-				onRowStreamInit();
+				initMainRowStream();
 				step.first = false;
 			}
 
@@ -374,7 +351,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// no direct input means the script is not getting an input row and is executed exactly once
 		else {
 			if (step.first) {
-				onRowStreamInit();
+				initMainRowStream();
 				step.first = false;
 			}
 			r = new Object[data.outputRowMeta.size()];
@@ -394,6 +371,45 @@ public class SimpleExecutionModel implements ExecutionModel {
 			return false;
 		}
 
+	}
+
+	private void initSupplementRowStreams() throws KettleStepException {
+		
+		// put the info steps into ruby scope
+		RubyHash infoSteps = new RubyHash(data.runtime);
+
+		int i=0;
+		for (StreamInterface stream : meta.getStepIOMeta().getInfoStreams()) {
+			
+			StepStreamReader reader = new StepStreamReader(this, stream.getStepname());
+
+			// if there's direct input connected as well as info streams present, the info streams *must* be prefetched as per 4.0 API
+			if (data.hasDirectInput){
+				RubyArray allRows = reader.readAll();
+				BufferStreamReader bReader = new BufferStreamReader(this, allRows);
+				infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), bReader);
+			}
+			else{
+				infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), reader);	
+			}
+			
+			i++;
+		}
+		
+		data.container.put("$info_steps", infoSteps);
+		
+		// put the target steps into ruby scope
+		RubyHash targetSteps = new RubyHash(data.runtime);
+
+		int t=0;
+		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
+			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
+			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
+			t++;
+		}
+		
+		data.container.put("$target_steps", targetSteps);			
+		
 	}
 
 	public RubyStep getStep() {

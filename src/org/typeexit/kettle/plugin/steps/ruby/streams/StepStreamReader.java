@@ -31,7 +31,7 @@ public class StepStreamReader {
 		rs = step.findInputRowSet(srcStepName);
 		 
 	}
-	
+	 
 	public IRubyObject read(){
 		
 		Object r[] = rs.getRow();
@@ -67,7 +67,7 @@ public class StepStreamReader {
 	
 	}
 	
-	public IRubyObject readAll(){
+	public RubyArray readAll(){
 		
 		RubyArray arr = data.runtime.newArray();
 		
