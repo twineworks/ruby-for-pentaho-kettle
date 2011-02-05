@@ -2,7 +2,7 @@
 <plugin
 
    id="TypeExitRubyStep"
-   iconfile="icon.png"
+   iconfile="images/icon.png"
    description="Ruby Scripting"
    tooltip="Only there for demonstration purposes"
    category="Scripting"

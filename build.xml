@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<project name="RubyStep 4.0" default="dist" basedir="..">
+<project name="RubyStep 4.0" default="dist" basedir=".">
 	<description>
         Build file for a Kettle plugin
     </description>
 
 	<!-- you can use this file to set the kettle-dir property or change it directly below -->
-	<property file="build/local.properties" />
+	<property file="build.properties" />
 
 	<!-- change these to adapt to your environment -->
 	<property name="kettle-dir" location="your_kettle_4.x.x_dir_here"/>
@@ -67,7 +67,7 @@
 
 		<!-- Put the plugin.xml and icon into dist folder -->
 		<copy todir="${dist}">
-			<fileset dir="plugin" includes="*.*"/>
+			<fileset dir="plugin" includes="**/*.*"/>
 		</copy>
 		<!-- put the deps into lib subfolder -->
 		<mkdir dir="${dist}/lib" />

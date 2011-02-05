@@ -1,4 +1,4 @@
-To install the plugin simply copy the ExcelWriter folder
+To install the plugin simply copy the Ruby folder
 to the plugins/steps folder of your Kettle installation
 and restart Kettle. The plugin should appear in the
-"Output" section as "Excel Writer".
+"Scripting" section as "Ruby Scripting".
