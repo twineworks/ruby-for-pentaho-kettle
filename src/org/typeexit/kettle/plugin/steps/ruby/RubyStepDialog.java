@@ -13,8 +13,6 @@ import org.eclipse.swt.events.FocusAdapter;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.MenuAdapter;
-import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseAdapter;
@@ -33,7 +31,6 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -64,6 +61,7 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta.Role;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 
 public class RubyStepDialog extends BaseStepDialog implements StepDialogInterface {
@@ -126,6 +124,22 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private MenuItem renameItem;
 
+	private Image initScriptImage;
+
+	private Image disposeScriptImage;
+
+	private Image libScriptImage;
+
+	private MenuItem rowScriptItem;
+
+	private MenuItem libScriptItem;
+
+	private MenuItem initScriptItem;
+
+	private MenuItem disposeScriptItem;
+
+	private Image rowScriptImage;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -173,6 +187,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			rubyImage = guiResource.getImage(pluginBaseDir + ("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			addImage = guiResource.getImage(pluginBaseDir + ("/images/addSmall.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			renameImage = guiResource.getImage(pluginBaseDir + ("/images/edit.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			rowScriptImage = rubyImage;
+			initScriptImage = guiResource.getImage(pluginBaseDir + ("/images/startScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			disposeScriptImage = guiResource.getImage(pluginBaseDir + ("/images/endScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			libScriptImage = scriptImage;
 		} catch (Exception e) {
 			Image empty = guiResource.getImage("TypeExitRubyStep:empty16x16");
 			scriptImage = empty;
@@ -180,6 +198,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			rubyImage = empty;
 			addImage = empty;
 			renameImage = empty;
+			rowScriptImage = empty;
+			initScriptImage = empty;
+			disposeScriptImage = empty;
+			libScriptImage = empty;
 		}
 
 		// start construction
@@ -719,6 +741,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				Control c = dragItem.getControl();
 				dragItem.setControl(null);
 				newItem.setControl(c);
+				
+				newItem.setData("role", dragItem.getData("role"));
 
 				dragItem.dispose();
 				folder.setSelection(newItem);
@@ -858,7 +882,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 			CTabItem item = items[i];
 			StyledTextComp wText = (StyledTextComp) item.getControl();
-			retval.add(new RubyScriptMeta(item.getText(), wText.getText()));
+			retval.add(new RubyScriptMeta(item.getText(), wText.getText(), (Role) item.getData("role")));
 
 		}
 		return retval;
@@ -959,19 +983,152 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				}
 			}
 		});
+		new MenuItem(scriptMenu, SWT.SEPARATOR);
+		
+		rowScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
+		rowScriptItem.setText("set as row script");
+		rowScriptItem.setImage(rowScriptImage);
+		rowScriptItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				MenuItem item = (MenuItem) e.widget;
+				if (item.getSelection()) {
+					setActiveTabRowScript();
+				} 
+			}
+		});		
+		
+
+		libScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
+		libScriptItem.setText("set as lib script");
+		libScriptItem.setImage(libScriptImage);
+		libScriptItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				MenuItem item = (MenuItem) e.widget;
+				if (item.getSelection()) {
+					setActiveTabLibScript();
+				} 
+			}
+		});		
+		
+		initScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
+		initScriptItem.setText("set as init script");
+		initScriptItem.setImage(initScriptImage);
+		initScriptItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				MenuItem item = (MenuItem) e.widget;
+				if (item.getSelection()) {
+					setActiveTabInitScript();
+				} 
+			}
+		});			
+		
+		disposeScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
+		disposeScriptItem.setText("set as dispose script");
+		disposeScriptItem.setImage(disposeScriptImage);
+		disposeScriptItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				MenuItem item = (MenuItem) e.widget;
+				if (item.getSelection()) {
+					setActiveTabDisposeScript();
+				} 
+			}
+		});				
 
 		wScriptsFolder.setMenu(scriptMenu);
 
+		// menu is about to show, let's enable/disable stuff
 		scriptMenu.addListener(SWT.Show, new Listener() {
 
 			@Override
 			public void handleEvent(Event e) {
+				// set the label on the rename item 
 				renameItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.RenameScript", wScriptsFolder.getSelection().getText()));
+				
+				// set selection for the correct role
+				rowScriptItem.setSelection(false);
+				libScriptItem.setSelection(false);
+				initScriptItem.setSelection(false);
+				disposeScriptItem.setSelection(false);
+				
+				switch((Role) wScriptsFolder.getSelection().getData("role")){
+					case LIB_SCRIPT:
+						libScriptItem.setSelection(true);
+						break;
+					case ROW_SCRIPT:
+						rowScriptItem.setSelection(true);
+						break;
+					case INIT_SCRIPT:
+						initScriptItem.setSelection(true);
+						break;
+					case DISPOSE_SCRIPT:
+						disposeScriptItem.setSelection(true);
+						break;
+				}
+				
 			}
 
 		});
 
 	}
+
+	protected void setActiveTabRowScript() {
+		
+		CTabItem[] items = wScriptsFolder.getItems();
+		for (int i = 0; i < items.length; i++) {
+			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.ROW_SCRIPT) {
+				// the old script gets its row script status revoked, simply replaced with lib
+				items[i].setData("role", Role.LIB_SCRIPT);
+				items[i].setImage(libScriptImage);
+			}
+		}
+		
+		wScriptsFolder.getSelection().setData("role", Role.ROW_SCRIPT);
+		wScriptsFolder.getSelection().setImage(rowScriptImage);
+		input.setChanged();
+		
+	}
+	
+	protected void setActiveTabInitScript() {
+		
+		CTabItem[] items = wScriptsFolder.getItems();
+		for (int i = 0; i < items.length; i++) {
+			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.INIT_SCRIPT) {
+				// the old script gets its init script status revoked, simply replaced with lib
+				items[i].setData("role", Role.LIB_SCRIPT);
+				items[i].setImage(libScriptImage);
+			}
+		}
+		
+		wScriptsFolder.getSelection().setData("role", Role.INIT_SCRIPT);
+		wScriptsFolder.getSelection().setImage(initScriptImage);
+		input.setChanged();
+		
+	}	
+	
+	protected void setActiveTabDisposeScript() {
+		
+		CTabItem[] items = wScriptsFolder.getItems();
+		for (int i = 0; i < items.length; i++) {
+			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.DISPOSE_SCRIPT) {
+				// the old script gets its dispose script status revoked, simply replaced with lib
+				items[i].setData("role", Role.LIB_SCRIPT);
+				items[i].setImage(libScriptImage);
+			}
+		}
+		
+		wScriptsFolder.getSelection().setData("role", Role.DISPOSE_SCRIPT);
+		wScriptsFolder.getSelection().setImage(disposeScriptImage);
+		input.setChanged();
+		
+	}		
+	
+	protected void setActiveTabLibScript() {
+				
+		wScriptsFolder.getSelection().setData("role", Role.LIB_SCRIPT);
+		wScriptsFolder.getSelection().setImage(libScriptImage);
+		input.setChanged();
+		
+	}	
 
 	protected List<String> collectInactiveScriptNames() {
 
@@ -992,10 +1149,23 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		item.setText(script.getTitle());
 
 		input.setChanged();
-		// TODO: the image should be based on the script type
-		if (wScriptsFolder.getItemCount() == 1) {
-			item.setImage(rubyImage);
+
+		switch(script.getRole()){
+		case DISPOSE_SCRIPT:
+			item.setImage(disposeScriptImage);
+			break;
+		case INIT_SCRIPT:
+			item.setImage(initScriptImage);
+			break;
+		case LIB_SCRIPT:
+			item.setImage(libScriptImage);
+			break;
+		case ROW_SCRIPT:
+			item.setImage(rowScriptImage);
+			break;
 		}
+		
+		item.setData("role", script.getRole());
 		
 		StyledTextComp wScript = new StyledTextComp(item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
 		wScript.setText(script.getScript());

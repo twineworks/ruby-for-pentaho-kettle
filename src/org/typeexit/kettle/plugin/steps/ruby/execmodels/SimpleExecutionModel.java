@@ -28,6 +28,7 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepFactory;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMarshalledObject;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.typeexit.kettle.plugin.steps.ruby.streams.BufferStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
@@ -71,6 +72,15 @@ public class SimpleExecutionModel implements ExecutionModel {
 				data.container.put(var.getName(), step.environmentSubstitute(var.getValue()));
 			}
 
+			// put all script tabs into scope
+			RubyHash tabs = new RubyHash(data.runtime);
+
+			for(RubyScriptMeta tab : meta.getScripts()){
+				tabs.put(tab.getTitle(), new ScriptTab(tab, data));
+			}
+			
+			data.container.put("$tabs", tabs);
+			
 			// FIXME: fix this when we know how to support multiple script tabs
 			data.rubyScriptObject = data.container.parse(meta.getScripts().get(0).getScript(), 0);
 

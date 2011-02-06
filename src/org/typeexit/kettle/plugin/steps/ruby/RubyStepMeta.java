@@ -37,6 +37,7 @@ import org.pentaho.di.trans.step.errorhandling.StreamInterface.StreamType;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
+import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta.Role;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.w3c.dom.Node;
 
@@ -241,6 +242,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			retval.append(TAB).append(TAB).append("<script>").append(Const.CR);
 			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("title", script.getTitle())).append(Const.CR);
 			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("body", script.getScript())).append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("role", script.getRole().toString())).append(Const.CR);
 			retval.append(TAB).append(TAB).append("</script>").append(Const.CR);
 		}
 
@@ -307,7 +309,12 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
 			for (int i = 0; i < nrScripts; i++) {
 				Node sNode = XMLHandler.getSubNodeByNr(scriptNode, "script", i);
-				scripts.add(new RubyScriptMeta(XMLHandler.getTagValue(sNode, "title"), XMLHandler.getTagValue(sNode, "body")));
+				scripts.add(new RubyScriptMeta(
+								XMLHandler.getTagValue(sNode, "title"), 
+								XMLHandler.getTagValue(sNode, "body"), 
+								Role.valueOf(Const.NVL(XMLHandler.getTagValue(sNode, "role"), Role.LIB_SCRIPT.toString()))
+							)
+				);
 			}
 			
 			// load clear input fields flag
@@ -383,6 +390,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			for (int i = 0; i < scripts.size(); i++) {
 				rep.saveStepAttribute(id_transformation, id_step, i, "script_title", scripts.get(i).getTitle());
 				rep.saveStepAttribute(id_transformation, id_step, i, "script_body", scripts.get(i).getScript());
+				rep.saveStepAttribute(id_transformation, id_step, i, "script_role", scripts.get(i).getRole().toString()); 
 			}
 			
 			// save clear input fields flag
@@ -428,7 +436,8 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			for (int i = 0; i < nrScripts; i++) {
 				RubyScriptMeta s = new RubyScriptMeta(
 						rep.getStepAttributeString(id_step, i, "script_title"),
-						rep.getStepAttributeString(id_step, i, "script_body")
+						rep.getStepAttributeString(id_step, i, "script_body"),
+						Role.valueOf(rep.getStepAttributeString(id_step, i, "script_role"))
 				);
 				scripts.add(s);
 			}

@@ -5,18 +5,29 @@ import java.util.List;
 
 public class RubyScriptMeta implements Cloneable {
 
-	public static final RubyScriptMeta DEFAULT_SCRIPT = new RubyScriptMeta("Ruby Script", "# your script goes here my friend");
+	
 	private String title;
 	private String script;
+	private Role role;
+
+	public static final RubyScriptMeta DEFAULT_SCRIPT = new RubyScriptMeta("Ruby Script", "# your script goes here my friend", Role.ROW_SCRIPT);
+	
+	static public enum Role {
+		LIB_SCRIPT,
+		ROW_SCRIPT,
+		INIT_SCRIPT,
+		DISPOSE_SCRIPT
+	};
 	
 	public RubyScriptMeta(){
 		super();
 	}
 
-	public RubyScriptMeta(String title, String script) {
+	public RubyScriptMeta(String title, String script, Role role) {
 		super();
 		this.title = title;
 		this.script = script;
+		this.role = role;
 	}
 
 	public static RubyScriptMeta createScriptWithUniqueName(List<RubyScriptMeta> existing){
@@ -32,6 +43,7 @@ public class RubyScriptMeta implements Cloneable {
 		}
 		
 		RubyScriptMeta retval = DEFAULT_SCRIPT.clone();
+		retval.setRole(Role.LIB_SCRIPT);
 		retval.setTitle(title);
 		
 		return retval;
@@ -70,6 +82,14 @@ public class RubyScriptMeta implements Cloneable {
 
 	public void setScript(String script) {
 		this.script = script;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
 	}
 
 }
