@@ -46,6 +46,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.swt.widgets.Tracker;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
 import org.pentaho.di.core.plugins.PluginRegistry;
@@ -655,88 +656,77 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	private void addScriptFolderDnD() {
-		Listener listener = new Listener() {
 
-			boolean drag = false;
-			boolean exitDrag = false;
-			CTabItem dragItem;
+		wScriptsFolder.addListener(SWT.DragDetect, new Listener() {
+
 			Display display = shell.getDisplay();
+
 			CTabFolder folder = wScriptsFolder;
+			Tracker t;
 
 			public void handleEvent(Event e) {
-				Point p = new Point(e.x, e.y);
-				if (e.type == SWT.DragDetect) {
-					p = folder.toControl(display.getCursorLocation()); //see bug 43251
-				}
-				switch (e.type) {
-				case SWT.DragDetect: {
-					CTabItem item = folder.getItem(p);
-					if (item == null)
-						return;
-					drag = true;
-					exitDrag = false;
-					dragItem = item;
-					break;
-				}
-				case SWT.MouseEnter:
-					if (exitDrag) {
-						exitDrag = false;
-						drag = e.button != 0;
+
+				CTabItem dragItem = folder.getItem(folder.toControl(display.getCursorLocation()));
+				if (dragItem == null)
+					return;
+
+				// open a tracker with current item's bounds
+				t = new Tracker(folder, SWT.NONE);
+
+				Rectangle[] rects = { dragItem.getBounds() };
+				t.setRectangles(rects);
+
+				t.addListener(SWT.Move, new Listener() {
+
+					@Override
+					public void handleEvent(Event e) {
+
+						// when moving the tracker around, set the rectangles to whatever item we're hovering over. if hovering over nothing, no rectangles
+						Point p = new Point(e.x, e.y); // display coords
+						Point folderPoint = folder.toControl(p);
+						CTabItem hoverItem = folder.getItem(folderPoint);
+						if (hoverItem != null) {
+							t.setRectangles(new Rectangle[] { hoverItem.getBounds() });
+						}
+						else {
+							t.setRectangles(new Rectangle[0]);
+						}
+
 					}
-					break;
-				case SWT.MouseExit:
-					if (drag) {
-						folder.setInsertMark(null, false);
-						exitDrag = true;
-						drag = false;
-					}
-					break;
-				case SWT.MouseUp: {
-					if (!drag)
-						return;
-					folder.setInsertMark(null, false);
-					CTabItem item = folder.getItem(new Point(p.x, 1));
-					if (item != null) {
-						Rectangle rect = item.getBounds();
-						boolean after = p.x > rect.x + rect.width / 2;
-						int index = folder.indexOf(item);
-						index = after ? index + 1 : index - 1;
-						index = Math.max(0, index);
-						CTabItem newItem = new CTabItem(folder, dragItem.getStyle(), index);
-						newItem.setText(dragItem.getText());
-						newItem.setImage(dragItem.getImage());
-						Control c = dragItem.getControl();
-						dragItem.setControl(null);
-						newItem.setControl(c);
-						dragItem.dispose();
-						folder.setSelection(newItem);
-					}
-					drag = false;
-					exitDrag = false;
-					dragItem = null;
-					break;
+				});
+
+				t.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+				t.open();
+
+				// user finished dragging the tab around, let's drop it
+
+				Point folderPoint = folder.toControl(display.getCursorLocation());
+				CTabItem dropItem = folder.getItem(folderPoint);
+				if (dropItem == null || dropItem == dragItem) {
+					return;
 				}
-				case SWT.MouseMove: {
-					if (!drag)
-						return;
-					CTabItem item = folder.getItem(new Point(p.x, 2));
-					if (item == null) {
-						folder.setInsertMark(null, false);
-						return;
-					}
-					Rectangle rect = item.getBounds();
-					boolean after = p.x > rect.x + rect.width / 2;
-					folder.setInsertMark(item, after);
-					break;
+				// first find out where this is going
+				int idx = folder.indexOf(dropItem);
+				if (folder.indexOf(dragItem) < idx) {
+					idx++;
 				}
-				}
+
+				// make a copy of the item we're dragging around, as the original is going to be disposed of
+				CTabItem newItem = new CTabItem(folder, dragItem.getStyle(), idx);
+
+				newItem.setText(dragItem.getText());
+				newItem.setImage(dragItem.getImage());
+				Control c = dragItem.getControl();
+				dragItem.setControl(null);
+				newItem.setControl(c);
+
+				dragItem.dispose();
+				folder.setSelection(newItem);
+				folder.redraw();
+
 			}
-		};
-		wScriptsFolder.addListener(SWT.DragDetect, listener);
-		wScriptsFolder.addListener(SWT.MouseUp, listener);
-		wScriptsFolder.addListener(SWT.MouseMove, listener);
-		wScriptsFolder.addListener(SWT.MouseExit, listener);
-		wScriptsFolder.addListener(SWT.MouseEnter, listener);
+
+		});
 
 	}
 
