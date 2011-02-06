@@ -996,7 +996,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		if (wScriptsFolder.getItemCount() == 1) {
 			item.setImage(rubyImage);
 		}
-
+		
 		StyledTextComp wScript = new StyledTextComp(item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
 		wScript.setText(script.getScript());
 
@@ -1012,6 +1012,14 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		});
 
+		wScript.addListener(SWT.Show, new Listener(){
+
+			@Override
+			public void handleEvent(Event e) {
+				highlightSyntax();
+			}}
+		);
+		
 		wScript.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				updateEditingPosition();
