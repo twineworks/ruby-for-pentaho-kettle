@@ -10,11 +10,9 @@ import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
 /**
  * Instances of StepStreamReader are designed to be used from within ruby scripts. 
- * They are primarily used to read from info streams.
+ * They are used to read from info streams.
  */
 
-
-// TODO: consider moving this to an inner class of the execution model
 public class StepStreamReader {
 	
 	private RowSet rs;

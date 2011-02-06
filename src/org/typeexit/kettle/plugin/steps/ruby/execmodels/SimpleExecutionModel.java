@@ -59,8 +59,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 			data.container = RubyStepFactory.createScriptingContainer(true);
 			data.runtime = data.container.getProvider().getRuntime();
 
-			// FIXME: fixme when we know how to support multiple script tabs
-			data.container.setScriptFilename(meta.getScripts().get(0).getTitle());
 			data.container.getProvider().getRubyInstanceConfig().setCompileMode(CompileMode.JIT);
 
 			// put the usual stuff into global scope
@@ -81,8 +79,8 @@ public class SimpleExecutionModel implements ExecutionModel {
 			
 			data.container.put("$tabs", tabs);
 			
-			// FIXME: fix this when we know how to support multiple script tabs
-			data.rubyScriptObject = data.container.parse(meta.getScripts().get(0).getScript(), 0);
+			data.container.setScriptFilename(meta.getRowScript().getTitle());
+			data.rubyScriptObject = data.container.parse(meta.getRowScript().getScript(), 0);
 
 			// temporary place for the output a script might produce
 			data.rowList = new LinkedList<Object[]>();
@@ -313,6 +311,11 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		if (step.first) {
 			data.hasDirectInput = meta.hasDirectInput();
+			// call the init script here rather than in the init section. It guarantees that other steps are fully initialized.
+			if (meta.getInitScript() != null){
+				data.container.runScriptlet(meta.getInitScript().getScript());
+			}
+			
 			// this must be done before the first call to getRow() in case there are info streams present
 			initSupplementRowStreams();
 		}
@@ -349,6 +352,13 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 				return true;
 			} else {
+
+				// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
+				// write "summary" rows and the like 
+				if (meta.getDisposeScript() != null){
+					data.container.runScriptlet(meta.getDisposeScript().getScript());
+				}				
+				
 				// no more rows coming in
 				step.setOutputDone();
 				return false;
@@ -374,6 +384,12 @@ public class SimpleExecutionModel implements ExecutionModel {
 			for (Object[] outrow : data.rowList) {
 				step.putRow(data.outputRowMeta, outrow);
 			}
+			
+			// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
+			// write "summary" rows and the like 
+			if (meta.getDisposeScript() != null){
+				data.container.runScriptlet(meta.getDisposeScript().getScript());
+			}						
 
 			step.setOutputDone();
 			return false;

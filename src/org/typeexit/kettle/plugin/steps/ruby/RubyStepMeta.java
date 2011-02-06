@@ -530,6 +530,55 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		return hasDirectInput() && !infoSteps.isEmpty();
 	}
 	
+	// returns the row script, returns an empty dummy script if there's none defined 
+	public RubyScriptMeta getRowScript(){
+		
+		for(RubyScriptMeta s: scripts){
+			if (s.getRole() == Role.ROW_SCRIPT){
+				return s;
+			}
+		}
+		
+		return new RubyScriptMeta("dummy", "# dummy", Role.ROW_SCRIPT);
+	}
+	
+	// returns how many row scripts are defined (only legal count is 1)
+	public int getRowScriptCount(){
+		
+		int counter = 0;
+		for(RubyScriptMeta s: scripts){
+			if (s.getRole() == Role.ROW_SCRIPT){
+				counter++;
+			}
+		}
+		
+		return counter;
+	}	
+	
+	// returns the init script, returns null if there's none defined 
+	public RubyScriptMeta getInitScript(){
+		
+		for(RubyScriptMeta s: scripts){
+			if (s.getRole() == Role.INIT_SCRIPT){
+				return s;
+			}
+		}
+		
+		return null;
+	}	
+	
+	// returns the dispose script, returns null if there's none defined 
+	public RubyScriptMeta getDisposeScript(){
+		
+		for(RubyScriptMeta s: scripts){
+			if (s.getRole() == Role.DISPOSE_SCRIPT){
+				return s;
+			}
+		}
+		
+		return null;
+	}		
+	
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Getters and Setters 	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/

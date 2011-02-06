@@ -986,7 +986,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		new MenuItem(scriptMenu, SWT.SEPARATOR);
 		
 		rowScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
-		rowScriptItem.setText("set as row script");
+		rowScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.RowScript"));
 		rowScriptItem.setImage(rowScriptImage);
 		rowScriptItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -999,7 +999,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		
 
 		libScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
-		libScriptItem.setText("set as lib script");
+		libScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.LibScript"));
 		libScriptItem.setImage(libScriptImage);
 		libScriptItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -1011,7 +1011,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		});		
 		
 		initScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
-		initScriptItem.setText("set as init script");
+		initScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.InitScript"));
 		initScriptItem.setImage(initScriptImage);
 		initScriptItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -1023,7 +1023,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		});			
 		
 		disposeScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
-		disposeScriptItem.setText("set as dispose script");
+		disposeScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.DisposeScript"));
 		disposeScriptItem.setImage(disposeScriptImage);
 		disposeScriptItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -1187,6 +1187,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			@Override
 			public void handleEvent(Event e) {
 				highlightSyntax();
+				hideParseErrors();
 			}}
 		);
 		
