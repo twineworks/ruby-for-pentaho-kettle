@@ -286,6 +286,13 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		styleTabFolder(wBottomFolder);
 
 		addOutputFieldsTab();
+
+		prevStepNames = transMeta.getPrevStepNames(stepMeta);
+		addInfoStepsTab();
+
+		nextStepNames = transMeta.getNextStepNames(stepMeta);
+		addTargetStepsTab();
+
 		addScopeVariablesTab();
 		addExecutionModelTab();
 
@@ -355,7 +362,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		// Detect X or ALT-F4 or something that kills this window...
 		shell.addShellListener(new ShellAdapter() {
 			public void shellClosed(ShellEvent e) {
-				cancel();
+				if (!cancel()){
+					e.doit = false;
+				};
 			}
 		});
 
@@ -464,10 +473,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private void addInfoStepsTab() {
 
-		CTabItem infoStepsItem = new CTabItem(wLeftFolder, SWT.NONE);
+		CTabItem infoStepsItem = new CTabItem(wBottomFolder, SWT.NONE);
 		infoStepsItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.InfoSteps.Label"));
 
-		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
+		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
 
 		FormData fdPanel = new FormData();
@@ -499,10 +508,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private void addTargetStepsTab() {
 
-		CTabItem targetStepsItem = new CTabItem(wLeftFolder, SWT.NONE);
+		CTabItem targetStepsItem = new CTabItem(wBottomFolder, SWT.NONE);
 		targetStepsItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.TargetSteps.Label"));
 
-		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
+		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
 
 		FormData fdPanel = new FormData();
@@ -810,10 +819,25 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	}
 
-	private void cancel() {
+	private boolean cancel() {
+		
+		if (input.hasChanged()){
+		
+    		MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
+    		box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Title"));
+    		box.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Message", Const.CR));
+    		int answer = box.open();
+    		
+    		if (answer==SWT.NO) {
+    			return false;
+    		}	
+			
+		}
+		
 		stepname = null;
 		input.setChanged(changed);
 		dispose();
+		return true;
 	}
 
 	// let the plugin know about the entered data
@@ -924,12 +948,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		});
 
 		addFieldSummaryTab();
-
-		prevStepNames = transMeta.getPrevStepNames(stepMeta);
-		addInfoStepsTab();
-
-		nextStepNames = transMeta.getNextStepNames(stepMeta);
-		addTargetStepsTab();
 
 		// layout tab folder below the label 
 		FormData fdLeftFolder = new FormData();

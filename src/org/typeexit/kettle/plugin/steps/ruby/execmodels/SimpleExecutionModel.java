@@ -64,7 +64,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
 			data.container.put("$trans", step.getDispatcher());
-
+			
 			// put all variables into scope
 			for (RubyVariableMeta var : meta.getRubyVariables()) {
 				data.container.put(var.getName(), step.environmentSubstitute(var.getValue()));
