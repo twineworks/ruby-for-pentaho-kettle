@@ -32,10 +32,10 @@ import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.typeexit.kettle.plugin.steps.ruby.streams.BufferStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.ErrorStreamWriter;
-import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
-import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamWriter;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
+import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter;
 
 public class SimpleExecutionModel implements ExecutionModel {
 
@@ -54,7 +54,8 @@ public class SimpleExecutionModel implements ExecutionModel {
 	public boolean onInit() {
 
 		try {
-			data.container = RubyStepFactory.createScriptingContainer(true);
+			data.container = RubyStepFactory.createScriptingContainer(true, meta.getRubyVersion());
+			
 			data.runtime = data.container.getProvider().getRuntime();
 
 			data.container.getProvider().getRubyInstanceConfig().setCompileMode(CompileMode.JIT);

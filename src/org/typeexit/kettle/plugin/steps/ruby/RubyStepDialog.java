@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolder2Adapter;
 import org.eclipse.swt.custom.CTabFolderEvent;
@@ -30,6 +31,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -67,6 +69,7 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
@@ -80,7 +83,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private RubyStepSyntaxHighlighter syntaxHighlighter;
 	private RubyStepParseErrorHelper parseErrorHelper;
 	private RubyStepMeta input;
-
+	private boolean changedInDialog;
+	
 	// output field name
 
 	private CTabFolder wScriptsFolder;
@@ -183,6 +187,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private Image fieldErrorImage;
 
+	private CCombo wRubyCompat;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -191,12 +197,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	public String open() {
+		
+		changed = input.hasChanged();
+		changedInDialog = false;
+		
 		Shell parent = getParent();
 		Display display = parent.getDisplay();
 
 		shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MIN | SWT.MAX);
 		syntaxHighlighter = new RubyStepSyntaxHighlighter();
-		parseErrorHelper = new RubyStepParseErrorHelper();
+		parseErrorHelper = new RubyStepParseErrorHelper(input.getRubyVersion());
 
 		props.setLook(shell);
 		setShellImage(shell, input);
@@ -204,9 +214,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		lsMod = new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				input.setChanged();
+				changedInDialog = true;
 			}
 		};
-		changed = input.hasChanged();
 
 		FormLayout formLayout = new FormLayout();
 		formLayout.marginWidth = Const.FORM_MARGIN;
@@ -689,7 +699,11 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 					// collect output fields
 					RowMetaInterface outputFields = transMeta.getStepFields(stepname);
-					RowMetaInterface errorFields = input.getParentStepMeta().getStepErrorMeta().getErrorFields();
+					RowMetaInterface errorFields = null;
+
+					if (input.getParentStepMeta().isDoingErrorHandling()) {
+						errorFields = input.getParentStepMeta().getStepErrorMeta().getErrorFields();
+					}
 
 					setTreeFields(inputFields, infoStepFields, outputFields, errorFields);
 				}
@@ -700,6 +714,21 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		};
 		new Thread(runnable).start();
+
+		wTree.addListener(SWT.MouseDoubleClick, new Listener() {
+
+			@Override
+			public void handleEvent(Event e) {
+				
+				Point point = new Point (e.x, e.y);
+				TreeItem item = wTree.getItem (point);
+				if (item != null) {
+					StyledTextComp wScript = (StyledTextComp)wScriptsFolder.getSelection().getControl();
+					wScript.getStyledText().insert(item.getText(2));
+				}				
+				
+			}
+		});
 
 		FormData fdTree = new FormData();
 		fdTree.left = new FormAttachment(0, 0);
@@ -825,7 +854,26 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
 		wPanel.setLayout(new GridLayout(2, true));
-		
+
+		Label lRubyCompat = new Label(wPanel, SWT.RIGHT);
+		lRubyCompat.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Compatibility"));
+		lRubyCompat.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END | GridData.GRAB_HORIZONTAL));
+
+		wRubyCompat = new CCombo(wPanel, SWT.READ_ONLY | SWT.BORDER);
+		wRubyCompat.setItems(new String[] { "Ruby 1.8", "Ruby 1.9" });
+		wRubyCompat.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL));
+		wRubyCompat.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				RubyVersion newVersion = wRubyCompat.getSelectionIndex() == 0 ? RubyVersion.RUBY_1_8 : RubyVersion.RUBY_1_9;
+				syntaxHighlighter.newRubyVersionSelected(newVersion);
+				parseErrorHelper.newRubyVersionSelected(newVersion);
+				input.setChanged();
+				changedInDialog = true;
+			}
+		});
+
 		executionModelItem.setControl(wPanel);
 
 	}
@@ -861,6 +909,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 					case SWT.YES:
 							event.doit = true;
 							input.setChanged();
+							changedInDialog = true;
 							break;
 						}
 					}
@@ -1038,6 +1087,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		// load clear input fields flag
 		wClearInputFields.setSelection(input.isClearInputFields());
 
+		// load ruby version
+		wRubyCompat.select(input.getRubyVersion() == RubyVersion.RUBY_1_8 ? 0 : 1);
+
 		// load ruby vars
 		int varNum = 0;
 		for (RubyVariableMeta var : input.getRubyVariables()) {
@@ -1072,7 +1124,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private boolean cancel() {
 
-		if (input.hasChanged()) {
+		if (changedInDialog) {
 
 			MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
 			box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Title"));
@@ -1093,6 +1145,21 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	// let the plugin know about the entered data
 	private void ok() {
+
+		// if there's syntax error, warn the user
+		if (!hasRowScript()){
+			
+			MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
+			box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogNoRowScript.Title"));
+			box.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogNoRowScript.Message", Const.CR));
+			int answer = box.open();
+
+			if (answer == SWT.NO) {
+				return;
+			}			
+			
+		}
+		
 		stepname = wStepname.getText(); // return value
 
 		// generate scripts
@@ -1113,6 +1180,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		// save clear input fields flag
 		input.setClearInputFields(wClearInputFields.getSelection());
+
+		// set ruby version
+		input.setRubyVersion(wRubyCompat.getSelectionIndex() == 0 ? RubyVersion.RUBY_1_8 : RubyVersion.RUBY_1_9);
 
 		// generate ruby vars
 		List<RubyVariableMeta> rubyVars = input.getRubyVariables();
@@ -1147,6 +1217,17 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		// make sure the input finds its info and target step metas alright
 		input.searchInfoAndTargetSteps(transMeta.getSteps());
 		dispose();
+	}
+
+	private boolean hasRowScript() {
+
+		for(CTabItem item : wScriptsFolder.getItems()){
+			if (item.getData("role") == RubyScriptMeta.Role.ROW_SCRIPT){
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	private List<RubyScriptMeta> collectScripts() {
@@ -1219,7 +1300,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		folder.setSelectionBackground(new Color[] {
 							display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND),
 							display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT)
-						}, 
+						},
 						new int[] { 75 }, true);
 		folder.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 	}
@@ -1235,6 +1316,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			public void handleEvent(Event e) {
 				RubyScriptMeta script = RubyScriptMeta.createScriptWithUniqueName(collectScripts());
 				addScriptTab(script);
+				input.setChanged();
+				changedInDialog = true;
+				
 				wScriptsFolder.setSelection(wScriptsFolder.getItemCount() - 1); // select newest tab
 				highlightSyntax();
 			}
@@ -1251,6 +1335,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				if (newName != null) {
 					wScriptsFolder.getSelection().setText(newName);
 					input.setChanged();
+					changedInDialog = true;
 				}
 			}
 		});
@@ -1355,6 +1440,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.getSelection().setData("role", Role.ROW_SCRIPT);
 		wScriptsFolder.getSelection().setImage(rowScriptImage);
 		input.setChanged();
+		changedInDialog = true;
 
 	}
 
@@ -1372,6 +1458,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.getSelection().setData("role", Role.INIT_SCRIPT);
 		wScriptsFolder.getSelection().setImage(initScriptImage);
 		input.setChanged();
+		changedInDialog = true;
 
 	}
 
@@ -1389,6 +1476,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.getSelection().setData("role", Role.DISPOSE_SCRIPT);
 		wScriptsFolder.getSelection().setImage(disposeScriptImage);
 		input.setChanged();
+		changedInDialog = true;
 
 	}
 
@@ -1397,6 +1485,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wScriptsFolder.getSelection().setData("role", Role.LIB_SCRIPT);
 		wScriptsFolder.getSelection().setImage(libScriptImage);
 		input.setChanged();
+		changedInDialog = true;
 
 	}
 
@@ -1417,8 +1506,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		CTabItem item = new CTabItem(wScriptsFolder, SWT.CLOSE);
 		item.setText(script.getTitle());
-
-		input.setChanged();
 
 		switch (script.getRole()) {
 		case DISPOSE_SCRIPT:
@@ -1552,10 +1639,24 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		syntaxHighlighter.highlight(item.getText(), wText);
 	}
 
-	private void checkForParseErrors() {
-		CTabItem item = wScriptsFolder.getSelection();
-		StyledTextComp wText = (StyledTextComp) item.getControl();
-		parseErrorHelper.showParseErrors(wText, wlSyntaxCheck);
+	private boolean checkForParseErrors() {
+		
+		boolean hasErrors = false;
+		
+		for(CTabItem item : wScriptsFolder.getItems()){
+			StyledTextComp wText = (StyledTextComp) item.getControl();
+			if (parseErrorHelper.hasParseErrors(wText)){
+				wScriptsFolder.setSelection(item);
+				parseErrorHelper.showParseErrors(wText, wlSyntaxCheck);
+				hasErrors = true;
+				break;
+			}
+		}
+		
+		if (!hasErrors){
+			wlSyntaxCheck.setText("OK");
+		}
+		return !hasErrors;
 	}
 
 	private void hideParseErrors() {

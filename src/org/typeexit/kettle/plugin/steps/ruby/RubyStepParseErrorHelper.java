@@ -1,17 +1,21 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
+import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.output.NullOutputStream;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.jruby.CompatVersion;
 import org.jruby.embed.ParseFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
+import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 
 public class RubyStepParseErrorHelper {
 
@@ -23,14 +27,20 @@ public class RubyStepParseErrorHelper {
 	private Pattern pErrorLine = Pattern.compile(":([0-9]+):");
 	private Pattern pErrorChar = Pattern.compile("^(\\s+)\\^", Pattern.MULTILINE);
 	
-	public RubyStepParseErrorHelper(){
+	public RubyStepParseErrorHelper(RubyVersion version){
 		
 		Display display = Display.getDefault();
 		errorLineColor = new Color(display, new RGB(255,220,220));
-		container = RubyStepFactory.createScriptingContainer(false);
+		container = RubyStepFactory.createScriptingContainer(false, version);
+
+		// do not litter the console with potential parse errors
+		container.setError(new PrintStream(new NullOutputStream()));
+		container.setOutput(new PrintStream(new NullOutputStream()));
+
+		
 	}
 	
-	void showParseErrors(StyledTextComp wText, Label wlSyntaxCheck) {
+	boolean showParseErrors(StyledTextComp wText, Label wlSyntaxCheck) {
 	
 		if (normalLineColor == null){
 			wText.getStyledText().getLineBackground(0);	
@@ -86,8 +96,9 @@ public class RubyStepParseErrorHelper {
 				//ex.printStackTrace();
 				//ignore
 			}
-	
+			return true;
 		}
+		return false;
 	}
 
 	public void hideParseErrors(StyledTextComp wText, Label wlSyntaxCheck) {
@@ -138,4 +149,31 @@ public class RubyStepParseErrorHelper {
 		
 	}
 
+	public void newRubyVersionSelected(RubyVersion rubyVersion) {
+		// consider setting explicit compat level on parser configuration
+		switch(rubyVersion){
+		case RUBY_1_8:
+			container.setCompatVersion(CompatVersion.RUBY1_8);
+			break;
+		case RUBY_1_9:
+			container.setCompatVersion(CompatVersion.RUBY1_9);
+			break;
+		}
+		
+		
+	}
+
+	public boolean hasParseErrors(StyledTextComp wText) {
+		
+		try{ 
+			container.parse(wText.getText(), 0);
+			return false;
+		}
+		catch(ParseFailedException e){
+			return true;
+		}
+		
+	}
+	
+	
 }

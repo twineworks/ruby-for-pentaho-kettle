@@ -25,6 +25,7 @@ import org.jruby.parser.RubyParserResult;
 import org.jruby.parser.Tokens;
 import java.util.Arrays;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
+import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 import org.apache.commons.lang.ArrayUtils;
 
 public class RubyStepSyntaxHighlighter {
@@ -260,7 +261,8 @@ public class RubyStepSyntaxHighlighter {
 			intRanges.add(wText.getText().length() - leftTokenBorder);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			// the lexer will sometimes throw a non-syntax exception when confronted with malformed input
+			//e.printStackTrace();
 		}
 		
 		// don't mind swt errors in case some unforseen input brought the style ranges out of order
@@ -268,7 +270,7 @@ public class RubyStepSyntaxHighlighter {
 			canvas.setStyleRanges(ArrayUtils.toPrimitive(intRanges.toArray(new Integer[0])), ranges.toArray(new StyleRange[0]));
 		}
 		catch (Exception e){
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		
 
@@ -328,6 +330,10 @@ public class RubyStepSyntaxHighlighter {
 			return null;
 		}
 
+	}
+
+	public void newRubyVersionSelected(RubyVersion rubyVersion) {
+		// consider setting explicit compat level on parser configuration
 	}
 
 }

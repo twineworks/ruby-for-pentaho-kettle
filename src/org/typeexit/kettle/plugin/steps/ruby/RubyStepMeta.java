@@ -53,7 +53,13 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	private List<RubyVariableMeta> rubyVariables;
 	private List<ValueMetaInterface> affectedFields;
 	private boolean clearInputFields;
+	private RubyVersion rubyVersion;
 
+	static public enum RubyVersion {
+		RUBY_1_8,
+		RUBY_1_9
+	};
+	
 	public RubyStepMeta() {
 		super();
 		setDefault();
@@ -168,11 +174,14 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
 	public void setDefault() {
 		scripts = new ArrayList<RubyScriptMeta>();
+		scripts.add(RubyScriptMeta.DEFAULT_SCRIPT);
+		
 		infoSteps = new ArrayList<RoleStepMeta>();
 		targetSteps = new ArrayList<RoleStepMeta>();
 		outputFields = new ArrayList<OutputFieldMeta>();
 		rubyVariables = new ArrayList<RubyVariableMeta>();
 		clearInputFields = false;
+		rubyVersion = RubyVersion.RUBY_1_8;
 	}
 
 	public RubyStepMeta clone() {
@@ -240,13 +249,16 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
 		for (RubyScriptMeta script : scripts) {
 			retval.append(TAB).append(TAB).append("<script>").append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("title", script.getTitle())).append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("body", script.getScript())).append(Const.CR);
-			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("role", script.getRole().toString())).append(Const.CR);
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("title", script.getTitle()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("body", script.getScript()));
+			retval.append(TAB).append(TAB).append(TAB).append(XMLHandler.addTagValue("role", script.getRole().toString()));
 			retval.append(TAB).append(TAB).append("</script>").append(Const.CR);
 		}
 
 		retval.append(TAB).append("</scripts>").append(Const.CR);
+		
+		// save ruby version flag
+		retval.append(TAB).append(XMLHandler.addTagValue("rubyVersion", rubyVersion.name()));
 		
 		// save clear input fields flag
 		retval.append(TAB).append(XMLHandler.addTagValue("clearInputFields", clearInputFields)).append(Const.CR);
@@ -319,6 +331,9 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			
 			// load clear input fields flag
 			clearInputFields = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "clearInputFields"));
+			
+			// load ruby version
+			rubyVersion = RubyVersion.valueOf(Const.NVL(XMLHandler.getTagValue(stepnode, "rubyVersion"), RubyVersion.RUBY_1_8.toString()));
 			
 			// load ouput fields
 			outputFields.clear();
@@ -396,6 +411,9 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			// save clear input fields flag
 			rep.saveStepAttribute(id_transformation, id_step, "clear_input_fields", clearInputFields);
 			
+			// save ruby version flag
+			rep.saveStepAttribute(id_transformation, id_step, "ruby_version", rubyVersion.toString());
+			
 			// save ouput fields
 			for(int i=0;i<outputFields.size();i++){
 				rep.saveStepAttribute(id_transformation, id_step, i, "output_field_name", outputFields.get(i).getName());
@@ -444,6 +462,9 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			
 			// load clear input fields flag
 			clearInputFields = rep.getStepAttributeBoolean(id_step, "clear_input_fields");
+			
+			// load ruby version flag
+			rubyVersion = RubyVersion.valueOf(rep.getStepAttributeString(id_step, "ruby_version"));
 			
 			// load ouput fields
 			int nrFields = rep.countNrStepAttributes(id_step, "ouput_field_name");
@@ -651,4 +672,12 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		return affectedFields;
 	}
 
+	public RubyVersion getRubyVersion(){
+		return rubyVersion;
+	}
+	
+	public void setRubyVersion(RubyVersion ver){
+		rubyVersion = ver;
+	}
+	
 }
