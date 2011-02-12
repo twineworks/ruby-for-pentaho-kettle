@@ -162,6 +162,22 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private Image fieldImage;
 
+	private TreeItem inputFolderTreeItem;
+
+	private Image folderImage;
+
+	private TreeItem outputFolderTreeItem;
+
+	private TreeItem outputTreeItem;
+
+	private Image outputImage;
+
+	private HashMap<String, TreeItem> targetTreeItems;
+
+	private Image targetStepImage;
+
+	private Image fieldChangedImage;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -204,7 +220,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
 
 		try {
-			infoStepImage = guiResource.getImage(pluginBaseDir + ("/images/info_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			
 			scriptImage = guiResource.getImage(pluginBaseDir + ("/images/libScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			checkImage = guiResource.getImage(pluginBaseDir + ("/images/check.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			rubyImage = guiResource.getImage(pluginBaseDir + ("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
@@ -214,8 +230,13 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			initScriptImage = guiResource.getImage(pluginBaseDir + ("/images/startScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			disposeScriptImage = guiResource.getImage(pluginBaseDir + ("/images/endScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			libScriptImage = scriptImage;
+			infoStepImage = guiResource.getImage(pluginBaseDir + ("/images/info_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			targetStepImage = guiResource.getImage(pluginBaseDir + ("/images/target_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			inputImage = guiResource.getImage(pluginBaseDir + ("/images/input.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			outputImage = guiResource.getImage(pluginBaseDir + ("/images/output.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			fieldImage = guiResource.getImage(pluginBaseDir + ("/images/field.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			fieldChangedImage = guiResource.getImage(pluginBaseDir + ("/images/field_changed.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			folderImage = guiResource.getImage(pluginBaseDir + ("/images/folder.png".replaceAll("/", Const.FILE_SEPARATOR)));
 		} catch (Exception e) {
 			Image empty = guiResource.getImage("TypeExitRubyStep:empty16x16");
 			scriptImage = empty;
@@ -228,8 +249,12 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			disposeScriptImage = empty;
 			libScriptImage = empty;
 			infoStepImage = empty;
+			targetStepImage = empty;
 			inputImage = empty;
+			outputImage = empty;
 			fieldImage = empty;
+			fieldChangedImage = empty;
+			folderImage = empty;
 		}
 
 		// start construction
@@ -582,28 +607,56 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wTree.setHeaderVisible(true);
 		TreeColumn column1 = new TreeColumn(wTree, SWT.LEFT);
 		column1.setText("Field");
-		column1.setWidth(100);
+		column1.setWidth(120);
 		TreeColumn column2 = new TreeColumn(wTree, SWT.LEFT);
 		column2.setText("Type");
-		column2.setWidth(100);
+		column2.setWidth(120);
 		TreeColumn column3 = new TreeColumn(wTree, SWT.LEFT);
-		column3.setText("Make available?");
-		column3.setWidth(100);
+		column3.setText("Available as");
+		column3.setWidth(120);
 
+		inputFolderTreeItem = new TreeItem(wTree, SWT.NONE);
+		inputFolderTreeItem.setText(new String[] { "input", "", "" });
+		inputFolderTreeItem.setImage(folderImage);
+		
+		outputFolderTreeItem = new TreeItem(wTree, SWT.NONE);
+		outputFolderTreeItem.setText(new String[] { "output", "", "" });
+		outputFolderTreeItem.setImage(folderImage);
+		
 		infoTreeItems = new HashMap<String, TreeItem>();
 		
-		// insert markers for input streams
+		// insert markers for info streams
 		for (RoleStepMeta s : input.getInfoSteps()) {
-			TreeItem item = new TreeItem(wTree, SWT.NONE);
-			item.setText(new String[] { s.getRoleName(), "info step", "" });
+			TreeItem item = new TreeItem(inputFolderTreeItem, SWT.NONE);
+			item.setText(new String[] { s.getRoleName(), "row stream", "$info_steps[\""+s.getRoleName()+"\"]" });
 			item.setImage(infoStepImage);
 			infoTreeItems.put(s.getStepName(), item);
 		}
 
 		// insert markers for input stream
-		inputTreeItem = new TreeItem(wTree, SWT.NONE);
-		inputTreeItem.setText(new String[] { "input", "input", "" });
+		inputTreeItem = new TreeItem(inputFolderTreeItem, SWT.NONE);
+		inputTreeItem.setText(new String[] { "input", "row stream", "$input" });
 		inputTreeItem.setImage(inputImage);
+
+		// insert markers for target steps
+		targetTreeItems = new HashMap<String, TreeItem>();
+		
+		// insert markers for target streams
+		for (RoleStepMeta s : input.getTargetSteps()) {
+			TreeItem item = new TreeItem(outputFolderTreeItem, SWT.NONE);
+			item.setText(new String[] { s.getRoleName(), "row stream", "$target_steps[\""+s.getRoleName()+"\"]" });
+			item.setImage(targetStepImage);
+			targetTreeItems.put(s.getStepName(), item);
+		}		
+		
+		// insert marker for output stream
+		outputTreeItem = new TreeItem(outputFolderTreeItem, SWT.NONE);
+		outputTreeItem.setText(new String[] { "output", "row stream", "$output" });
+		outputTreeItem.setImage(outputImage);
+		
+		
+		inputFolderTreeItem.setExpanded(true);
+
 
 		final Runnable runnable = new Runnable()
 		{
@@ -611,7 +664,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			{
 				try{
 					// collect main input fields
-					RowMetaInterface rowPrevStepFields = transMeta.getPrevStepFields(input.getParentStepMeta());
+					RowMetaInterface inputFields = transMeta.getPrevStepFields(input.getParentStepMeta());
 					
 					// collect fields from input steps
 					HashMap<String,RowMetaInterface> infoStepFields = new HashMap<String,RowMetaInterface>();
@@ -619,7 +672,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 						infoStepFields.put(step, transMeta.getStepFields(step));
 					}
 					
-					setTreeInputFields(rowPrevStepFields, infoStepFields);
+					// collect output fields
+					RowMetaInterface outputFields = transMeta.getStepFields(stepname);
+					
+					setTreeFields(inputFields, infoStepFields, outputFields);
 				}
 				catch (KettleException e)
 				{
@@ -636,7 +692,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		fdTree.bottom = new FormAttachment(100, 0);
 		wTree.setLayoutData(fdTree);
 
-		wTree.pack();
+		//wTree.pack();
 
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
@@ -649,22 +705,22 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	}
 
-	protected void setTreeInputFields(final RowMetaInterface rowPrevStepFields, final HashMap<String,RowMetaInterface> infoFields) {
+	protected void setTreeFields(final RowMetaInterface inputFields, final HashMap<String,RowMetaInterface> infoFields, final RowMetaInterface outputFields) {
 		
 		shell.getDisplay().syncExec(new Runnable(){
 
 			@Override
 			public void run() {
 				inputTreeItem.removeAll();
-				if (rowPrevStepFields != null){
+				if (inputFields != null){
 					
-					for (ValueMetaInterface v : rowPrevStepFields.getValueMetaList()) {
+					for (ValueMetaInterface v : inputFields.getValueMetaList()) {
 						TreeItem m = new TreeItem(inputTreeItem, SWT.NONE);
-						m.setText(new String[] {v.getName(), v.getTypeDesc(), "as ruby equivalent"});
+						m.setText(new String[] {v.getName(), v.getTypeDesc(), "$row[\""+v.getName()+"\"]"});
 						m.setImage(fieldImage);
 					}
 					
-					if (rowPrevStepFields.size() == 0){
+					if (inputFields.size() == 0){
 						inputTreeItem.dispose();
 					}
 					else{
@@ -680,12 +736,41 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 						RowMetaInterface stepFields = infoFields.get(step);
 						for (ValueMetaInterface v : stepFields.getValueMetaList()) {
 							TreeItem m = new TreeItem(parent, SWT.NONE);
-							m.setText(new String[] {v.getName(), v.getTypeDesc(), "as ruby equivalent"});
+							m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
 							m.setImage(fieldImage);
 						}
 						parent.setExpanded(true);
 					}
 				}
+				
+				
+				// output stream
+				outputTreeItem.removeAll();
+				if (outputFields != null){
+					
+					for (ValueMetaInterface v : outputFields.getValueMetaList()) {
+						TreeItem m = new TreeItem(outputTreeItem, SWT.NONE);
+						m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
+						m.setImage(input.addsOrChangesField(v.getName())? fieldChangedImage: fieldImage);
+					}
+					
+					outputTreeItem.setExpanded(false);
+					
+				}		
+				
+				// target steps
+				for(RoleStepMeta step : input.getTargetSteps()){
+					TreeItem parent = targetTreeItems.get(step.getStepName());
+					if (parent != null){
+						parent.removeAll();
+						for (ValueMetaInterface v : outputFields.getValueMetaList()) {
+							TreeItem m = new TreeItem(parent, SWT.NONE);
+							m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
+							m.setImage(input.addsOrChangesField(v.getName())? fieldChangedImage: fieldImage);
+						}
+						parent.setExpanded(false);
+					}
+				}				
 				
 			}});
 

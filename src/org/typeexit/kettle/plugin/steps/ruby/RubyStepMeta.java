@@ -579,6 +579,18 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		return null;
 	}		
 	
+	// returns whether a particular field is changed or added by this step
+	public boolean addsOrChangesField(String fieldname){
+		
+		for (OutputFieldMeta field : getOutputFields()) {
+			if (field.getName().equals(fieldname)){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Getters and Setters 	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/
