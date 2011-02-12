@@ -7,7 +7,7 @@
 	<classpathentry kind="lib" path="/Users/slawo/Projects/PDI Builds/4.1.0 stable/lib/kettle-engine.jar"/>
 	<classpathentry kind="lib" path="/Users/slawo/Projects/PDI Builds/4.1.0 stable/lib/kettle-ui-swt.jar"/>
 	<classpathentry kind="lib" path="/Users/slawo/Projects/PDI Builds/4.1.0 stable/libswt/osx64/swt.jar"/>
-	<classpathentry kind="lib" path="lib/jruby-complete-1.6.0.RC1.jar" sourcepath="/Users/slawo/Projects/Libs/jruby-1.6.0.RC1 src"/>
 	<classpathentry kind="lib" path="/Users/slawo/Projects/PDI Builds/4.1.0 stable/libext/commons/commons-lang-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/jruby-complete-1.6.0.RC2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
