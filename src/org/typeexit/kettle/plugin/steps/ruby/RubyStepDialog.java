@@ -1,6 +1,7 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -44,15 +45,24 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tracker;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Props;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
+import org.pentaho.di.trans.step.StepIOMetaInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
@@ -115,6 +125,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private Image checkImage;
 
 	final private String[] NO_YES = new String[2];
+//	final private String[] YES_NO = new String[2];
 
 	private Menu scriptMenu;
 
@@ -139,6 +150,17 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private MenuItem disposeScriptItem;
 
 	private Image rowScriptImage;
+	private Image infoStepImage;
+
+	private Tree wTree;
+
+	private TreeItem inputTreeItem;
+
+	private HashMap<String,TreeItem> infoTreeItems;
+
+	private Image inputImage;
+
+	private Image fieldImage;
 
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
@@ -182,6 +204,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
 
 		try {
+			infoStepImage = guiResource.getImage(pluginBaseDir + ("/images/info_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			scriptImage = guiResource.getImage(pluginBaseDir + ("/images/libScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			checkImage = guiResource.getImage(pluginBaseDir + ("/images/check.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			rubyImage = guiResource.getImage(pluginBaseDir + ("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
@@ -191,6 +214,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			initScriptImage = guiResource.getImage(pluginBaseDir + ("/images/startScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			disposeScriptImage = guiResource.getImage(pluginBaseDir + ("/images/endScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			libScriptImage = scriptImage;
+			inputImage = guiResource.getImage(pluginBaseDir + ("/images/input.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			fieldImage = guiResource.getImage(pluginBaseDir + ("/images/field.png".replaceAll("/", Const.FILE_SEPARATOR)));
 		} catch (Exception e) {
 			Image empty = guiResource.getImage("TypeExitRubyStep:empty16x16");
 			scriptImage = empty;
@@ -202,6 +227,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			initScriptImage = empty;
 			disposeScriptImage = empty;
 			libScriptImage = empty;
+			infoStepImage = empty;
+			inputImage = empty;
+			fieldImage = empty;
 		}
 
 		// start construction
@@ -362,9 +390,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		// Detect X or ALT-F4 or something that kills this window...
 		shell.addShellListener(new ShellAdapter() {
 			public void shellClosed(ShellEvent e) {
-				if (!cancel()){
+				if (!cancel()) {
 					e.doit = false;
-				};
+				}
+				;
 			}
 		});
 
@@ -549,6 +578,66 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
 
+		wTree = new Tree(wPanel, SWT.H_SCROLL | SWT.V_SCROLL);
+		wTree.setHeaderVisible(true);
+		TreeColumn column1 = new TreeColumn(wTree, SWT.LEFT);
+		column1.setText("Field");
+		column1.setWidth(100);
+		TreeColumn column2 = new TreeColumn(wTree, SWT.LEFT);
+		column2.setText("Type");
+		column2.setWidth(100);
+		TreeColumn column3 = new TreeColumn(wTree, SWT.LEFT);
+		column3.setText("Make available?");
+		column3.setWidth(100);
+
+		infoTreeItems = new HashMap<String, TreeItem>();
+		
+		// insert markers for input streams
+		for (RoleStepMeta s : input.getInfoSteps()) {
+			TreeItem item = new TreeItem(wTree, SWT.NONE);
+			item.setText(new String[] { s.getRoleName(), "info step", "" });
+			item.setImage(infoStepImage);
+			infoTreeItems.put(s.getStepName(), item);
+		}
+
+		// insert markers for input stream
+		inputTreeItem = new TreeItem(wTree, SWT.NONE);
+		inputTreeItem.setText(new String[] { "input", "input", "" });
+		inputTreeItem.setImage(inputImage);
+
+		final Runnable runnable = new Runnable()
+		{
+			public void run()
+			{
+				try{
+					// collect main input fields
+					RowMetaInterface rowPrevStepFields = transMeta.getPrevStepFields(input.getParentStepMeta());
+					
+					// collect fields from input steps
+					HashMap<String,RowMetaInterface> infoStepFields = new HashMap<String,RowMetaInterface>();
+					for(String step : input.getStepIOMeta().getInfoStepnames()){
+						infoStepFields.put(step, transMeta.getStepFields(step));
+					}
+					
+					setTreeInputFields(rowPrevStepFields, infoStepFields);
+				}
+				catch (KettleException e)
+				{
+					logError(BaseMessages.getString(PKG, "System.Dialog.GetFieldsFailed.Message"));
+				}
+			}
+		};
+		new Thread(runnable).start();
+
+		FormData fdTree = new FormData();
+		fdTree.left = new FormAttachment(0, 0);
+		fdTree.top = new FormAttachment(0, 0);
+		fdTree.right = new FormAttachment(100, 0);
+		fdTree.bottom = new FormAttachment(100, 0);
+		wTree.setLayoutData(fdTree);
+
+		wTree.pack();
+
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
 		fdPanel.top = new FormAttachment(0, 0);
@@ -557,6 +646,48 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wPanel.setLayoutData(fdPanel);
 
 		fieldSummaryItem.setControl(wPanel);
+
+	}
+
+	protected void setTreeInputFields(final RowMetaInterface rowPrevStepFields, final HashMap<String,RowMetaInterface> infoFields) {
+		
+		shell.getDisplay().syncExec(new Runnable(){
+
+			@Override
+			public void run() {
+				inputTreeItem.removeAll();
+				if (rowPrevStepFields != null){
+					
+					for (ValueMetaInterface v : rowPrevStepFields.getValueMetaList()) {
+						TreeItem m = new TreeItem(inputTreeItem, SWT.NONE);
+						m.setText(new String[] {v.getName(), v.getTypeDesc(), "as ruby equivalent"});
+						m.setImage(fieldImage);
+					}
+					
+					if (rowPrevStepFields.size() == 0){
+						inputTreeItem.dispose();
+					}
+					else{
+						inputTreeItem.setExpanded(true);
+					}
+					
+				}
+				
+				for(String step : infoFields.keySet()){
+					TreeItem parent = infoTreeItems.get(step);
+					if (parent != null){
+						parent.removeAll();
+						RowMetaInterface stepFields = infoFields.get(step);
+						for (ValueMetaInterface v : stepFields.getValueMetaList()) {
+							TreeItem m = new TreeItem(parent, SWT.NONE);
+							m.setText(new String[] {v.getName(), v.getTypeDesc(), "as ruby equivalent"});
+							m.setImage(fieldImage);
+						}
+						parent.setExpanded(true);
+					}
+				}
+				
+			}});
 
 	}
 
@@ -750,7 +881,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				Control c = dragItem.getControl();
 				dragItem.setControl(null);
 				newItem.setControl(c);
-				
+
 				newItem.setData("role", dragItem.getData("role"));
 
 				dragItem.dispose();
@@ -820,20 +951,20 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	private boolean cancel() {
-		
-		if (input.hasChanged()){
-		
-    		MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
-    		box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Title"));
-    		box.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Message", Const.CR));
-    		int answer = box.open();
-    		
-    		if (answer==SWT.NO) {
-    			return false;
-    		}	
-			
+
+		if (input.hasChanged()) {
+
+			MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
+			box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Title"));
+			box.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogChanged.Message", Const.CR));
+			int answer = box.open();
+
+			if (answer == SWT.NO) {
+				return false;
+			}
+
 		}
-		
+
 		stepname = null;
 		input.setChanged(changed);
 		dispose();
@@ -1002,7 +1133,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		});
 		new MenuItem(scriptMenu, SWT.SEPARATOR);
-		
+
 		rowScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
 		rowScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.RowScript"));
 		rowScriptItem.setImage(rowScriptImage);
@@ -1011,10 +1142,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				MenuItem item = (MenuItem) e.widget;
 				if (item.getSelection()) {
 					setActiveTabRowScript();
-				} 
+				}
 			}
-		});		
-		
+		});
 
 		libScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
 		libScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.LibScript"));
@@ -1024,10 +1154,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				MenuItem item = (MenuItem) e.widget;
 				if (item.getSelection()) {
 					setActiveTabLibScript();
-				} 
+				}
 			}
-		});		
-		
+		});
+
 		initScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
 		initScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.InitScript"));
 		initScriptItem.setImage(initScriptImage);
@@ -1036,10 +1166,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				MenuItem item = (MenuItem) e.widget;
 				if (item.getSelection()) {
 					setActiveTabInitScript();
-				} 
+				}
 			}
-		});			
-		
+		});
+
 		disposeScriptItem = new MenuItem(scriptMenu, SWT.RADIO);
 		disposeScriptItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.DisposeScript"));
 		disposeScriptItem.setImage(disposeScriptImage);
@@ -1048,9 +1178,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				MenuItem item = (MenuItem) e.widget;
 				if (item.getSelection()) {
 					setActiveTabDisposeScript();
-				} 
+				}
 			}
-		});				
+		});
 
 		wScriptsFolder.setMenu(scriptMenu);
 
@@ -1061,15 +1191,15 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			public void handleEvent(Event e) {
 				// set the label on the rename item 
 				renameItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Menu.RenameScript", wScriptsFolder.getSelection().getText()));
-				
+
 				// set selection for the correct role
 				rowScriptItem.setSelection(false);
 				libScriptItem.setSelection(false);
 				initScriptItem.setSelection(false);
 				disposeScriptItem.setSelection(false);
-				
-				switch((Role) wScriptsFolder.getSelection().getData("role")){
-					case LIB_SCRIPT:
+
+				switch ((Role) wScriptsFolder.getSelection().getData("role")) {
+				case LIB_SCRIPT:
 						libScriptItem.setSelection(true);
 						break;
 					case ROW_SCRIPT:
@@ -1081,16 +1211,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 					case DISPOSE_SCRIPT:
 						disposeScriptItem.setSelection(true);
 						break;
+					}
+
 				}
-				
-			}
 
 		});
 
 	}
 
 	protected void setActiveTabRowScript() {
-		
+
 		CTabItem[] items = wScriptsFolder.getItems();
 		for (int i = 0; i < items.length; i++) {
 			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.ROW_SCRIPT) {
@@ -1099,15 +1229,15 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				items[i].setImage(libScriptImage);
 			}
 		}
-		
+
 		wScriptsFolder.getSelection().setData("role", Role.ROW_SCRIPT);
 		wScriptsFolder.getSelection().setImage(rowScriptImage);
 		input.setChanged();
-		
+
 	}
-	
+
 	protected void setActiveTabInitScript() {
-		
+
 		CTabItem[] items = wScriptsFolder.getItems();
 		for (int i = 0; i < items.length; i++) {
 			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.INIT_SCRIPT) {
@@ -1116,15 +1246,15 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				items[i].setImage(libScriptImage);
 			}
 		}
-		
+
 		wScriptsFolder.getSelection().setData("role", Role.INIT_SCRIPT);
 		wScriptsFolder.getSelection().setImage(initScriptImage);
 		input.setChanged();
-		
-	}	
-	
+
+	}
+
 	protected void setActiveTabDisposeScript() {
-		
+
 		CTabItem[] items = wScriptsFolder.getItems();
 		for (int i = 0; i < items.length; i++) {
 			if (i != wScriptsFolder.getSelectionIndex() && items[i].getData("role") == Role.DISPOSE_SCRIPT) {
@@ -1133,20 +1263,20 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				items[i].setImage(libScriptImage);
 			}
 		}
-		
+
 		wScriptsFolder.getSelection().setData("role", Role.DISPOSE_SCRIPT);
 		wScriptsFolder.getSelection().setImage(disposeScriptImage);
 		input.setChanged();
-		
-	}		
-	
+
+	}
+
 	protected void setActiveTabLibScript() {
-				
+
 		wScriptsFolder.getSelection().setData("role", Role.LIB_SCRIPT);
 		wScriptsFolder.getSelection().setImage(libScriptImage);
 		input.setChanged();
-		
-	}	
+
+	}
 
 	protected List<String> collectInactiveScriptNames() {
 
@@ -1168,7 +1298,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		input.setChanged();
 
-		switch(script.getRole()){
+		switch (script.getRole()) {
 		case DISPOSE_SCRIPT:
 			item.setImage(disposeScriptImage);
 			break;
@@ -1182,9 +1312,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			item.setImage(rowScriptImage);
 			break;
 		}
-		
+
 		item.setData("role", script.getRole());
-		
+
 		StyledTextComp wScript = new StyledTextComp(item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
 		wScript.setText(script.getScript());
 
@@ -1200,15 +1330,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		});
 
-		wScript.addListener(SWT.Show, new Listener(){
+		wScript.addListener(SWT.Show, new Listener() {
 
 			@Override
 			public void handleEvent(Event e) {
 				highlightSyntax();
 				hideParseErrors();
-			}}
-		);
-		
+			}
+		}
+				);
+
 		wScript.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				updateEditingPosition();
