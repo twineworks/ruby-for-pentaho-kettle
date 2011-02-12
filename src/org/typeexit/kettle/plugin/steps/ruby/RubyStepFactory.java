@@ -32,12 +32,10 @@ public class RubyStepFactory {
 		paths.add(ScriptingContainer.class.getProtectionDomain().getCodeSource().getLocation().toString());
 		c.setLoadPaths(paths); 
 		
-		// TODO: add kettle directory ? and 
-		//data.container.setCompileMode(CompileMode.JIT);
+		// TODO: add kettle directory to path? 
 		
 		return c;
 		
 	}
-	
 	
 }

@@ -23,12 +23,14 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -60,9 +62,6 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
-import org.pentaho.di.trans.step.StepIOMetaInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
@@ -125,7 +124,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private Image checkImage;
 
 	final private String[] NO_YES = new String[2];
-//	final private String[] YES_NO = new String[2];
+	//	final private String[] YES_NO = new String[2];
 
 	private Menu scriptMenu;
 
@@ -156,7 +155,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private TreeItem inputTreeItem;
 
-	private HashMap<String,TreeItem> infoTreeItems;
+	private HashMap<String, TreeItem> infoTreeItems;
 
 	private Image inputImage;
 
@@ -177,6 +176,12 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private Image targetStepImage;
 
 	private Image fieldChangedImage;
+
+	private TreeItem errorTreeItem;
+
+	private Image errorOutputImage;
+
+	private Image fieldErrorImage;
 
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
@@ -220,7 +225,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
 
 		try {
-			
+
 			scriptImage = guiResource.getImage(pluginBaseDir + ("/images/libScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			checkImage = guiResource.getImage(pluginBaseDir + ("/images/check.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			rubyImage = guiResource.getImage(pluginBaseDir + ("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
@@ -237,6 +242,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			fieldImage = guiResource.getImage(pluginBaseDir + ("/images/field.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			fieldChangedImage = guiResource.getImage(pluginBaseDir + ("/images/field_changed.png".replaceAll("/", Const.FILE_SEPARATOR)));
 			folderImage = guiResource.getImage(pluginBaseDir + ("/images/folder.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			errorOutputImage = guiResource.getImage(pluginBaseDir + ("/images/error_output.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			fieldErrorImage = guiResource.getImage(pluginBaseDir + ("/images/field_error.png".replaceAll("/", Const.FILE_SEPARATOR)));
 		} catch (Exception e) {
 			Image empty = guiResource.getImage("TypeExitRubyStep:empty16x16");
 			scriptImage = empty;
@@ -254,7 +261,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			outputImage = empty;
 			fieldImage = empty;
 			fieldChangedImage = empty;
+			fieldErrorImage = empty;
 			folderImage = empty;
+			errorOutputImage = empty;
 		}
 
 		// start construction
@@ -336,7 +345,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wBottomFolder.setMinimizeVisible(false);
 		props.setLook(wBottomFolder);
 
-		styleTabFolder(wBottomFolder);
+		//	styleTabFolder(wBottomFolder);
 
 		addOutputFieldsTab();
 
@@ -606,29 +615,29 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wTree = new Tree(wPanel, SWT.H_SCROLL | SWT.V_SCROLL);
 		wTree.setHeaderVisible(true);
 		TreeColumn column1 = new TreeColumn(wTree, SWT.LEFT);
-		column1.setText("Field");
-		column1.setWidth(120);
+		column1.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.Field"));
+		column1.setWidth(180);
 		TreeColumn column2 = new TreeColumn(wTree, SWT.LEFT);
-		column2.setText("Type");
+		column2.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.Type"));
 		column2.setWidth(120);
 		TreeColumn column3 = new TreeColumn(wTree, SWT.LEFT);
-		column3.setText("Available as");
-		column3.setWidth(120);
+		column3.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.AvailableAs"));
+		column3.setWidth(160);
 
 		inputFolderTreeItem = new TreeItem(wTree, SWT.NONE);
 		inputFolderTreeItem.setText(new String[] { "input", "", "" });
 		inputFolderTreeItem.setImage(folderImage);
-		
+
 		outputFolderTreeItem = new TreeItem(wTree, SWT.NONE);
 		outputFolderTreeItem.setText(new String[] { "output", "", "" });
 		outputFolderTreeItem.setImage(folderImage);
-		
+
 		infoTreeItems = new HashMap<String, TreeItem>();
-		
+
 		// insert markers for info streams
 		for (RoleStepMeta s : input.getInfoSteps()) {
 			TreeItem item = new TreeItem(inputFolderTreeItem, SWT.NONE);
-			item.setText(new String[] { s.getRoleName(), "row stream", "$info_steps[\""+s.getRoleName()+"\"]" });
+			item.setText(new String[] { s.getRoleName(), "row stream", "$info_steps[\"" + s.getRoleName() + "\"]" });
 			item.setImage(infoStepImage);
 			infoTreeItems.put(s.getStepName(), item);
 		}
@@ -640,42 +649,49 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		// insert markers for target steps
 		targetTreeItems = new HashMap<String, TreeItem>();
-		
+
 		// insert markers for target streams
 		for (RoleStepMeta s : input.getTargetSteps()) {
 			TreeItem item = new TreeItem(outputFolderTreeItem, SWT.NONE);
-			item.setText(new String[] { s.getRoleName(), "row stream", "$target_steps[\""+s.getRoleName()+"\"]" });
+			item.setText(new String[] { s.getRoleName(), "row stream", "$target_steps[\"" + s.getRoleName() + "\"]" });
 			item.setImage(targetStepImage);
 			targetTreeItems.put(s.getStepName(), item);
-		}		
-		
+		}
+
 		// insert marker for output stream
 		outputTreeItem = new TreeItem(outputFolderTreeItem, SWT.NONE);
 		outputTreeItem.setText(new String[] { "output", "row stream", "$output" });
 		outputTreeItem.setImage(outputImage);
-		
-		
-		inputFolderTreeItem.setExpanded(true);
 
+		// insert marker for error stream
+		if (input.getParentStepMeta().isDoingErrorHandling()) {
+			errorTreeItem = new TreeItem(outputFolderTreeItem, SWT.NONE);
+			errorTreeItem.setText(new String[] { "error", "row stream", "$error" });
+			errorTreeItem.setImage(errorOutputImage);
+		}
+
+		inputFolderTreeItem.setExpanded(true);
+		outputFolderTreeItem.setExpanded(true);
 
 		final Runnable runnable = new Runnable()
 		{
 			public void run()
 			{
-				try{
+				try {
 					// collect main input fields
 					RowMetaInterface inputFields = transMeta.getPrevStepFields(input.getParentStepMeta());
-					
+
 					// collect fields from input steps
-					HashMap<String,RowMetaInterface> infoStepFields = new HashMap<String,RowMetaInterface>();
-					for(String step : input.getStepIOMeta().getInfoStepnames()){
+					HashMap<String, RowMetaInterface> infoStepFields = new HashMap<String, RowMetaInterface>();
+					for (String step : input.getStepIOMeta().getInfoStepnames()) {
 						infoStepFields.put(step, transMeta.getStepFields(step));
 					}
-					
+
 					// collect output fields
 					RowMetaInterface outputFields = transMeta.getStepFields(stepname);
-					
-					setTreeFields(inputFields, infoStepFields, outputFields);
+					RowMetaInterface errorFields = input.getParentStepMeta().getStepErrorMeta().getErrorFields();
+
+					setTreeFields(inputFields, infoStepFields, outputFields, errorFields);
 				}
 				catch (KettleException e)
 				{
@@ -692,8 +708,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		fdTree.bottom = new FormAttachment(100, 0);
 		wTree.setLayoutData(fdTree);
 
-		//wTree.pack();
-
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
 		fdPanel.top = new FormAttachment(0, 0);
@@ -705,92 +719,113 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	}
 
-	protected void setTreeFields(final RowMetaInterface inputFields, final HashMap<String,RowMetaInterface> infoFields, final RowMetaInterface outputFields) {
-		
-		shell.getDisplay().syncExec(new Runnable(){
+	protected void setTreeFields(final RowMetaInterface inputFields, final HashMap<String, RowMetaInterface> infoFields, final RowMetaInterface outputFields, final RowMetaInterface errorFields) {
+
+		shell.getDisplay().syncExec(new Runnable() {
 
 			@Override
 			public void run() {
 				inputTreeItem.removeAll();
-				if (inputFields != null){
-					
+				if (inputFields != null) {
+
 					for (ValueMetaInterface v : inputFields.getValueMetaList()) {
 						TreeItem m = new TreeItem(inputTreeItem, SWT.NONE);
-						m.setText(new String[] {v.getName(), v.getTypeDesc(), "$row[\""+v.getName()+"\"]"});
+						m.setText(new String[] { v.getName(), v.getTypeDesc(), "$row[\"" + v.getName() + "\"]" });
 						m.setImage(fieldImage);
 					}
-					
-					if (inputFields.size() == 0){
+
+					if (inputFields.size() == 0) {
 						inputTreeItem.dispose();
 					}
-					else{
+					else {
 						inputTreeItem.setExpanded(true);
 					}
-					
+
 				}
-				
-				for(String step : infoFields.keySet()){
+
+				for (String step : infoFields.keySet()) {
 					TreeItem parent = infoTreeItems.get(step);
-					if (parent != null){
+					if (parent != null) {
 						parent.removeAll();
 						RowMetaInterface stepFields = infoFields.get(step);
 						for (ValueMetaInterface v : stepFields.getValueMetaList()) {
 							TreeItem m = new TreeItem(parent, SWT.NONE);
-							m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
+							m.setText(new String[] { v.getName(), v.getTypeDesc(), "" });
 							m.setImage(fieldImage);
 						}
 						parent.setExpanded(true);
 					}
 				}
-				
-				
+
 				// output stream
 				outputTreeItem.removeAll();
-				if (outputFields != null){
-					
+				if (outputFields != null) {
+
 					for (ValueMetaInterface v : outputFields.getValueMetaList()) {
 						TreeItem m = new TreeItem(outputTreeItem, SWT.NONE);
-						m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
-						m.setImage(input.addsOrChangesField(v.getName())? fieldChangedImage: fieldImage);
+						m.setText(new String[] { v.getName(), v.getTypeDesc(), "" });
+						m.setImage(input.addsOrChangesField(v.getName()) ? fieldChangedImage : fieldImage);
 					}
-					
-					outputTreeItem.setExpanded(false);
-					
-				}		
-				
+
+					outputTreeItem.setExpanded(true);
+
+				}
+
 				// target steps
-				for(RoleStepMeta step : input.getTargetSteps()){
+				for (RoleStepMeta step : input.getTargetSteps()) {
 					TreeItem parent = targetTreeItems.get(step.getStepName());
-					if (parent != null){
+					if (parent != null) {
 						parent.removeAll();
 						for (ValueMetaInterface v : outputFields.getValueMetaList()) {
 							TreeItem m = new TreeItem(parent, SWT.NONE);
-							m.setText(new String[] {v.getName(), v.getTypeDesc(), ""});
-							m.setImage(input.addsOrChangesField(v.getName())? fieldChangedImage: fieldImage);
+							m.setText(new String[] { v.getName(), v.getTypeDesc(), "" });
+							m.setImage(input.addsOrChangesField(v.getName()) ? fieldChangedImage : fieldImage);
 						}
-						parent.setExpanded(false);
+						parent.setExpanded(true);
 					}
-				}				
-				
-			}});
+				}
+
+				// error stream
+				if (errorFields != null && input.getParentStepMeta().isDoingErrorHandling() && errorTreeItem != null) {
+					errorTreeItem.removeAll();
+
+					if (inputFields != null) {
+
+						for (ValueMetaInterface v : inputFields.getValueMetaList()) {
+							TreeItem m = new TreeItem(errorTreeItem, SWT.NONE);
+							m.setText(new String[] { v.getName(), v.getTypeDesc(), "" });
+							m.setImage(fieldImage);
+						}
+
+					}
+
+					if (errorFields != null) {
+
+						for (ValueMetaInterface v : errorFields.getValueMetaList()) {
+							TreeItem m = new TreeItem(errorTreeItem, SWT.NONE);
+							m.setText(new String[] { v.getName(), v.getTypeDesc(), "" });
+							m.setImage(fieldErrorImage);
+						}
+
+					}
+
+					errorTreeItem.setExpanded(true);
+
+				}
+
+			}
+		});
 
 	}
 
 	private void addExecutionModelTab() {
 
-		CTabItem executionModelItem = new CTabItem(wBottomFolder, SWT.NONE);
+		CTabItem executionModelItem = new CTabItem(wLeftFolder, SWT.NONE);
 		executionModelItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label"));
 
-		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
-		wPanel.setLayout(new FormLayout());
-
-		FormData fdPanel = new FormData();
-		fdPanel.left = new FormAttachment(0, 0);
-		fdPanel.top = new FormAttachment(0, 0);
-		fdPanel.right = new FormAttachment(100, 0);
-		fdPanel.bottom = new FormAttachment(100, 0);
-		wPanel.setLayoutData(fdPanel);
-
+		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
+		wPanel.setLayout(new GridLayout(2, true));
+		
 		executionModelItem.setControl(wPanel);
 
 	}
@@ -1149,7 +1184,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wLeftFolder.setMinimizeVisible(true);
 		props.setLook(wLeftFolder);
 
-		styleTabFolder(wLeftFolder);
+		//styleTabFolder(wLeftFolder);
 
 		// implement minimize logic
 		wLeftFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
@@ -1179,12 +1214,14 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	private void styleTabFolder(CTabFolder folder) {
-		//		Display display = folder.getDisplay();
-		//		
-		//		folder.setSelectionBackground(new Color[] {
-		//		        display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND),
-		//		        display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT) }, new int[] {75}, true);
-		//		folder.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+		Display display = folder.getDisplay();
+
+		folder.setSelectionBackground(new Color[] {
+							display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND),
+							display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT)
+						}, 
+						new int[] { 75 }, true);
+		folder.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 	}
 
 	private void addScriptPopupMenu() {

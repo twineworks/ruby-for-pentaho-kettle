@@ -31,6 +31,7 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyVariableMeta;
 import org.typeexit.kettle.plugin.steps.ruby.streams.BufferStreamReader;
+import org.typeexit.kettle.plugin.steps.ruby.streams.ErrorStreamWriter;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamReader;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter;
 import org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamReader;
@@ -41,9 +42,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 	private RubyStepData data;
 	private RubyStepMeta meta;
 	private RubyStep step;
-
-	private IRubyObject marshal;
-	private IRubyObject bigDecimal;
 
 	@Override
 	public void setEnvironment(RubyStep step, RubyStepData data, RubyStepMeta meta) {
@@ -84,6 +82,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			// temporary place for the output a script might produce
 			data.rowList = new LinkedList<Object[]>();
+			
 
 		} catch (Exception e) {
 			step.logError("Error Initializing Ruby Scripting Step", e);
@@ -95,9 +94,9 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	@Override
 	public void onDispose() {
-
-		marshal = null;
-		bigDecimal = null;
+		
+		data.marshal = null;
+		data.bigDecimal = null;
 
 		if (data.container != null) {
 			data.container.terminate();
@@ -110,17 +109,17 @@ public class SimpleExecutionModel implements ExecutionModel {
 	}
 
 	private IRubyObject getMarshal() {
-		if (marshal == null) {
-			marshal = data.container.parse("Marshal").run();
+		if (data.marshal == null) {
+			data.marshal = data.container.parse("Marshal").run();
 		}
-		return marshal;
+		return data.marshal;
 	}
 
 	private IRubyObject getBigDecimal() {
-		if (bigDecimal == null) {
-			bigDecimal = data.container.parse("require 'bigdecimal'; BigDecimal").run();
+		if (data.bigDecimal == null) {
+			data.bigDecimal = data.container.parse("require 'bigdecimal'; BigDecimal").run();
 		}
-		return bigDecimal;
+		return data.bigDecimal;
 	}
 
 	private void initMainRowStream() throws KettleException {
@@ -137,19 +136,29 @@ public class SimpleExecutionModel implements ExecutionModel {
 		data.outputRowMeta = inputRowMeta.clone();
 		meta.getFields(data.outputRowMeta, step.getStepname(), null, null, step);
 
+		data.cacheFieldNames(data.inputRowMeta);
+		data.cacheFieldNames(data.outputRowMeta);
+		
 		// put the standard streams into ruby scope
 		data.container.put("$output", new StdStreamWriter(this));
 		data.container.put("$input", new StdStreamReader(this));
+		
+		if (meta.getParentStepMeta().isDoingErrorHandling()){
+			
+			data.errorRowMeta = meta.getParentStepMeta().getStepErrorMeta().getErrorFields().clone();
+			data.stepErrorMeta = meta.getParentStepMeta().getStepErrorMeta();
+			data.cacheFieldNames(data.errorRowMeta);
+
+			data.container.put("$error", new ErrorStreamWriter(this));
+		}
 
 	}
 
 	public RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) {
 
-		// create a hash for the row, they are not reused on purpose, so the scripting user can safely use them to store entire rows between calls
+		// create a hash for the row, they are not reused on purpose, so the scripting user can safely use them to store entire rows between invocations
 		RubyHash rubyRow = new RubyHash(data.runtime);
 
-		// TODO: optimize this in letting the user decide which fields to insert (it makes a difference for serializable and binary types), user should maybe also choose which object to pass (Adapted Java Object or native ruby type)
-		// TODO: May be further optimized by deferring the conversion selection for each field
 		String[] fieldNames = rowMeta.getFieldNames();
 		for (int i = 0; i < fieldNames.length; i++) {
 
@@ -196,13 +205,12 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	private void applyRubyHashToRow(Object[] r, RubyHash resultRow, List<ValueMetaInterface> forFields) throws KettleException {
+	private void applyRubyHashToRow(Object[] r, RubyHash resultRow, List<ValueMetaInterface> forFields, RowMetaInterface forRow) throws KettleException {
 		
 		// set each field's value from the resultRow
 		for (ValueMetaInterface outField : forFields) {
 
-			// TODO: the ruby strings for field names can be cached and reused
-			IRubyObject rubyVal = resultRow.fastARef(JavaEmbedUtils.javaToRuby(data.runtime, outField.getName()));
+			IRubyObject rubyVal = resultRow.fastARef(data.rubyStringCache.get(outField.getName()));
 
 			// convert simple cases automatically
 			Object javaValue = null;
@@ -263,14 +271,12 @@ public class SimpleExecutionModel implements ExecutionModel {
 				
 			}
 
-			// TODO: optimize this for each field to know its index in advance
-			r[data.outputRowMeta.indexOfValue(outField.getName())] = javaValue;
-
+			r[data.fieldIndexCache.get(forRow).get(outField.getName())] = javaValue;
 		}
 
 	}
 
-	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList, List<ValueMetaInterface> forFields) throws KettleException {
+	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList, List<ValueMetaInterface> forFields, RowMetaInterface forRow) throws KettleException {
 
 		// skip nil result rows
 		if (rubyObject.isNil()) {
@@ -280,7 +286,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
 			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
-			applyRubyHashToRow(r, (RubyHash) rubyObject, forFields);
+			applyRubyHashToRow(r, (RubyHash) rubyObject, forFields, forRow);
 			rowList.add(r);
 			return;
 		}
@@ -290,13 +296,13 @@ public class SimpleExecutionModel implements ExecutionModel {
 			RubyArray rubyArray = (RubyArray) rubyObject;
 			int length = rubyArray.getLength();
 			for (int i = 0; i < length; i++) {
-				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList, forFields);
+				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList, forFields, forRow);
 			}
 			return;
 		}
 
 		// at this point the returned object is not nil, not a hash and not an array, give up (may use convertToHash in future for convertible objects..)
-		throw new KettleException("script returned non-hash value: " + rubyObject.toString() + " as a result ");
+		throw new KettleException("ruby script returned non-hash value: " + rubyObject.toString() + " as a result ");
 
 	}
 
@@ -343,7 +349,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 				IRubyObject scriptResult = data.rubyScriptObject.run();
 
 				data.rowList.clear();
-				fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields());
+				fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
 
 				// now if the script has output rows, write them to the main output stream
 				for (Object[] outrow : data.rowList) {
@@ -378,7 +384,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			IRubyObject scriptResult = data.rubyScriptObject.run();
 
 			data.rowList.clear();
-			fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields());
+			fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
 
 			// now if the script has output rows, write them to the main output stream
 			for (Object[] outrow : data.rowList) {

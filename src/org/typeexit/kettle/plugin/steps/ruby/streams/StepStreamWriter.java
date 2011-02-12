@@ -38,7 +38,7 @@ public class StepStreamWriter {
 		Object[] r = new Object[rowSize];
 		
 		rowList.clear();
-		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.outputRowMeta.getValueMetaList());
+		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.outputRowMeta.getValueMetaList(), data.outputRowMeta);
 
 		for(Object[] outRow : rowList){
 			rs.putRow(data.outputRowMeta, outRow);

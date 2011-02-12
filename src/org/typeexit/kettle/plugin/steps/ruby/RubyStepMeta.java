@@ -517,6 +517,10 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		return new RubyStepData();
 	}
 
+	public boolean supportsErrorHandling(){
+		return true;
+	}
+	
 	/*------------------------------------------------------------------------------------------------------------------------------------------------
 	 * Convenience Methods 	
 	 ------------------------------------------------------------------------------------------------------------------------------------------------*/

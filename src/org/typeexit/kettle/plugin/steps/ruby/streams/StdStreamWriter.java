@@ -34,7 +34,7 @@ public class StdStreamWriter {
 		Object[] r = new Object[rowSize];
 		
 		rowList.clear();
-		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.outputRowMeta.getValueMetaList());
+		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.outputRowMeta.getValueMetaList(), data.outputRowMeta);
 
 		for(Object[] outRow : rowList){
 			step.putRow(data.outputRowMeta, outRow);

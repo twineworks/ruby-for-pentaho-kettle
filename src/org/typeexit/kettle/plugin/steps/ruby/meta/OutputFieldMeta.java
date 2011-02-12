@@ -36,7 +36,7 @@ public class OutputFieldMeta implements Cloneable {
 		this.type = type;
 
 		switch (type) {
-		case ValueMeta.TYPE_NONE: // TODO: handle this error somewhere on init and/or check
+		case ValueMeta.TYPE_NONE: 
 			conversionClass = void.class;
 			break;
 		case ValueMeta.TYPE_INTEGER:
