@@ -1,5 +1,6 @@
 package org.typeexit.kettle.plugin.steps.ruby.execmodels;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.LinkedList;
@@ -10,7 +11,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyTime;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -55,11 +55,11 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		try {
 			data.container = RubyStepFactory.createScriptingContainer(true, meta.getRubyVersion());
-			
+
 			data.runtime = data.container.getProvider().getRuntime();
-
-			data.container.getProvider().getRubyInstanceConfig().setCompileMode(CompileMode.JIT);
-
+			data.container.setScriptFilename(meta.getRowScript().getTitle());
+			data.rubyScriptObject = data.container.parse(meta.getRowScript().getScript(), 0);
+			
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
 			data.container.put("$trans", step.getDispatcher());
@@ -77,9 +77,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 			}
 			
 			data.container.put("$tabs", tabs);
-			
-			data.container.setScriptFilename(meta.getRowScript().getTitle());
-			data.rubyScriptObject = data.container.parse(meta.getRowScript().getScript(), 0);
 
 			// temporary place for the output a script might produce
 			data.rowList = new LinkedList<Object[]>();
@@ -320,7 +317,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			data.hasDirectInput = meta.hasDirectInput();
 			// call the init script here rather than in the init section. It guarantees that other steps are fully initialized.
 			if (meta.getInitScript() != null){
-				data.container.runScriptlet(meta.getInitScript().getScript());
+				data.container.runScriptlet(new StringReader(meta.getInitScript().getScript()), meta.getInitScript().getTitle());
 			}
 			
 			// this must be done before the first call to getRow() in case there are info streams present

@@ -169,7 +169,7 @@ public class RubyStepParseErrorHelper {
 			container.parse(wText.getText(), 0);
 			return false;
 		}
-		catch(ParseFailedException e){
+		catch(Exception e){
 			return true;
 		}
 		

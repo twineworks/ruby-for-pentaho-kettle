@@ -68,6 +68,7 @@
 		<!-- Put the plugin.xml and icon into dist folder -->
 		<copy todir="${dist}">
 			<fileset dir="plugin" includes="**/*.*"/>
+			<fileset dir="plugin" includes="**"/>
 		</copy>
 		<!-- put the deps into lib subfolder -->
 		<mkdir dir="${dist}/lib" />
@@ -85,7 +86,8 @@
 		<mkdir dir="${kettle-dir}/plugins/steps/${pluginname}"/>
 
 		<copy todir="${kettle-dir}/plugins/steps/${pluginname}">
-			<fileset dir="${dist}" includes="**/*.*"/>
+			<fileset dir="${dist}" includes="**/*.*" />
+			<fileset dir="${dist}" includes="**" />
 		</copy>
 	</target>
 

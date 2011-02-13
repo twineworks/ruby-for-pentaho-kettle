@@ -10,7 +10,7 @@ public class RubyScriptMeta implements Cloneable {
 	private String script;
 	private Role role;
 
-	public static final RubyScriptMeta DEFAULT_SCRIPT = new RubyScriptMeta("Ruby Script", "# your script goes here my friend", Role.ROW_SCRIPT);
+	public static final RubyScriptMeta DEFAULT_SCRIPT = new RubyScriptMeta("Ruby Script", "# your script goes here \n\nputs \"Hello World!\"", Role.ROW_SCRIPT);
 	
 	static public enum Role {
 		LIB_SCRIPT,
@@ -32,7 +32,17 @@ public class RubyScriptMeta implements Cloneable {
 
 	public static RubyScriptMeta createScriptWithUniqueName(List<RubyScriptMeta> existing){
 		
-		String title = "New Script";
+		String	title = getUniqueName("New Script", existing);
+		
+		RubyScriptMeta retval = DEFAULT_SCRIPT.clone();
+		retval.setRole(Role.LIB_SCRIPT);
+		retval.setTitle(title);
+		
+		return retval;
+	} 
+	
+	public static String getUniqueName(String title, List<RubyScriptMeta> existing){
+		
 		List<String> existingTitles = extractTitles(existing);
 		
 		int num = 1;
@@ -42,12 +52,9 @@ public class RubyScriptMeta implements Cloneable {
 			num += 1;
 		}
 		
-		RubyScriptMeta retval = DEFAULT_SCRIPT.clone();
-		retval.setRole(Role.LIB_SCRIPT);
-		retval.setTitle(title);
-		
-		return retval;
+		return title;
 	} 
+
 	
 	private static List<String> extractTitles(List<RubyScriptMeta> scripts){
 		ArrayList<String> titles = new ArrayList<String>(scripts.size());

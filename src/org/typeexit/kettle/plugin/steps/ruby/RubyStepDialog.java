@@ -1,9 +1,15 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
@@ -28,6 +34,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -68,8 +75,10 @@ import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
+import org.typeexit.kettle.plugin.steps.ruby.RubyStepSamplesHelper.SampleType;
 import org.typeexit.kettle.plugin.steps.ruby.meta.OutputFieldMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RoleStepMeta;
 import org.typeexit.kettle.plugin.steps.ruby.meta.RubyScriptMeta;
@@ -84,7 +93,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private RubyStepParseErrorHelper parseErrorHelper;
 	private RubyStepMeta input;
 	private boolean changedInDialog;
-	
+
 	// output field name
 
 	private CTabFolder wScriptsFolder;
@@ -128,7 +137,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private Image checkImage;
 
 	final private String[] NO_YES = new String[2];
-	//	final private String[] YES_NO = new String[2];
 
 	private Menu scriptMenu;
 
@@ -189,6 +197,22 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private CCombo wRubyCompat;
 
+	private Tree wSamplesTree;
+
+	private File pluginBaseFile;
+
+	private Image transformationImage;
+
+	private Image webDocumentImage;
+
+	private RubyStepSamplesHelper samplesHelper;
+
+	private Menu sampleMenu;
+
+	private MenuItem showSampleItem;
+
+	private int middle;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -197,10 +221,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	public String open() {
-		
+
 		changed = input.hasChanged();
 		changedInDialog = false;
-		
+
 		Shell parent = getParent();
 		Display display = parent.getDisplay();
 
@@ -225,7 +249,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		shell.setLayout(formLayout);
 		shell.setText(BaseMessages.getString(PKG, "RubyStep.Shell.Title"));
 
-		int middle = props.getMiddlePct();
+		middle = props.getMiddlePct();
 
 		// load images
 		if (!guiResource.getImageMap().containsKey("TypeExitRubyStep:empty16x16")) {
@@ -233,27 +257,38 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		}
 
 		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
-
+		String pluginImageDir = pluginBaseDir + Const.FILE_SEPARATOR + "images" + Const.FILE_SEPARATOR;
+		
+		URL pluginBaseURL = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory();
+		
+		try {
+			pluginBaseFile = new File(pluginBaseURL.toURI());
+		} catch (URISyntaxException e) {
+			pluginBaseFile = new File(pluginBaseURL.getPath());
+		}
+		
 		try {
 
-			scriptImage = guiResource.getImage(pluginBaseDir + ("/images/libScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			checkImage = guiResource.getImage(pluginBaseDir + ("/images/check.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			rubyImage = guiResource.getImage(pluginBaseDir + ("/images/ruby_16.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			addImage = guiResource.getImage(pluginBaseDir + ("/images/addSmall.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			renameImage = guiResource.getImage(pluginBaseDir + ("/images/edit.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			scriptImage = guiResource.getImage(pluginImageDir + ("libScript.png"));
+			checkImage = guiResource.getImage(pluginImageDir + ("check.png"));
+			rubyImage = guiResource.getImage(pluginImageDir + ("ruby_16.png"));
+			addImage = guiResource.getImage(pluginImageDir + ("addSmall.png"));
+			renameImage = guiResource.getImage(pluginImageDir + ("edit.png"));
 			rowScriptImage = rubyImage;
-			initScriptImage = guiResource.getImage(pluginBaseDir + ("/images/startScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			disposeScriptImage = guiResource.getImage(pluginBaseDir + ("/images/endScript.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			initScriptImage = guiResource.getImage(pluginImageDir + ("startScript.png"));
+			disposeScriptImage = guiResource.getImage(pluginImageDir + ("endScript.png"));
 			libScriptImage = scriptImage;
-			infoStepImage = guiResource.getImage(pluginBaseDir + ("/images/info_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			targetStepImage = guiResource.getImage(pluginBaseDir + ("/images/target_step.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			inputImage = guiResource.getImage(pluginBaseDir + ("/images/input.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			outputImage = guiResource.getImage(pluginBaseDir + ("/images/output.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			fieldImage = guiResource.getImage(pluginBaseDir + ("/images/field.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			fieldChangedImage = guiResource.getImage(pluginBaseDir + ("/images/field_changed.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			folderImage = guiResource.getImage(pluginBaseDir + ("/images/folder.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			errorOutputImage = guiResource.getImage(pluginBaseDir + ("/images/error_output.png".replaceAll("/", Const.FILE_SEPARATOR)));
-			fieldErrorImage = guiResource.getImage(pluginBaseDir + ("/images/field_error.png".replaceAll("/", Const.FILE_SEPARATOR)));
+			infoStepImage = guiResource.getImage(pluginImageDir + ("info_step.png"));
+			targetStepImage = guiResource.getImage(pluginImageDir + ("target_step.png"));
+			inputImage = guiResource.getImage(pluginImageDir + ("input.png"));
+			outputImage = guiResource.getImage(pluginImageDir + ("output.png"));
+			fieldImage = guiResource.getImage(pluginImageDir + ("field.png"));
+			fieldChangedImage = guiResource.getImage(pluginImageDir + ("field_changed.png"));
+			folderImage = guiResource.getImage(pluginImageDir + ("folder.png"));
+			errorOutputImage = guiResource.getImage(pluginImageDir + ("error_output.png"));
+			fieldErrorImage = guiResource.getImage(pluginImageDir + ("field_error.png"));
+			transformationImage = guiResource.getImage(pluginImageDir + ("transformation.png"));
+			webDocumentImage = guiResource.getImage(pluginImageDir + ("web.png"));
 		} catch (Exception e) {
 			Image empty = guiResource.getImage("TypeExitRubyStep:empty16x16");
 			scriptImage = empty;
@@ -274,7 +309,16 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			fieldErrorImage = empty;
 			folderImage = empty;
 			errorOutputImage = empty;
+			transformationImage = empty;
+			webDocumentImage = empty;
 		}
+
+		samplesHelper = new RubyStepSamplesHelper();
+		samplesHelper.setFolderImage(folderImage);
+		samplesHelper.setSampleImage(fieldImage);
+		samplesHelper.setScriptImage(libScriptImage);
+		samplesHelper.setTransformationImage(transformationImage);
+		samplesHelper.setWebDocumentImage(webDocumentImage);
 
 		// start construction
 
@@ -299,21 +343,21 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wStepname.setLayoutData(fdStepname);
 
 		SashForm wSash = new SashForm(shell, SWT.VERTICAL);
-
+		props.setLook(wSash);
 		/*------------------------------------------------------------------------------------------------------------------------------------------------
 		 * Upper part of form  
 		 ------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 		// top part 
 		wTop = new SashForm(wSash, SWT.HORIZONTAL);
-		props.setLook(wTop);
 
 		FormLayout topLayout = new FormLayout();
 		topLayout.marginWidth = Const.FORM_MARGIN;
 		topLayout.marginHeight = Const.FORM_MARGIN;
 		wTop.setLayout(topLayout);
-
-		addSettingsArea();
+		props.setLook(wTop);
+		
+		addLeftArea();
 		addScriptArea();
 
 		FormData fdTop = new FormData();
@@ -345,6 +389,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		fdSeparator.right = new FormAttachment(100, 0);
 		fdSeparator.top = new FormAttachment(0, -margin);
 		wSeparator.setLayoutData(fdSeparator);
+		props.setLook(wSeparator);
 
 		// bottom tab folder
 		wBottomFolder = new CTabFolder(wBottom, SWT.BORDER | SWT.RESIZE);
@@ -354,8 +399,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wBottomFolder.setMaximizeVisible(false);
 		wBottomFolder.setMinimizeVisible(false);
 		props.setLook(wBottomFolder);
-
-		//	styleTabFolder(wBottomFolder);
 
 		addOutputFieldsTab();
 
@@ -507,6 +550,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
+		props.setLook(wPanel);
 
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
@@ -551,6 +595,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
+		props.setLook(wPanel);
 
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
@@ -586,7 +631,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
-
+		props.setLook(wPanel);
+		
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
 		fdPanel.top = new FormAttachment(0, 0);
@@ -621,6 +667,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
+		props.setLook(wPanel);
 
 		wTree = new Tree(wPanel, SWT.H_SCROLL | SWT.V_SCROLL);
 		wTree.setHeaderVisible(true);
@@ -633,6 +680,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		TreeColumn column3 = new TreeColumn(wTree, SWT.LEFT);
 		column3.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.AvailableAs"));
 		column3.setWidth(160);
+		props.setLook(wTree);
 
 		inputFolderTreeItem = new TreeItem(wTree, SWT.NONE);
 		inputFolderTreeItem.setText(new String[] { "input", "", "" });
@@ -719,14 +767,14 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 			@Override
 			public void handleEvent(Event e) {
-				
-				Point point = new Point (e.x, e.y);
-				TreeItem item = wTree.getItem (point);
+				if (e.button != 1) return;
+				Point point = new Point(e.x, e.y);
+				TreeItem item = wTree.getItem(point);
 				if (item != null) {
-					StyledTextComp wScript = (StyledTextComp)wScriptsFolder.getSelection().getControl();
+					StyledTextComp wScript = (StyledTextComp) wScriptsFolder.getSelection().getControl();
 					wScript.getStyledText().insert(item.getText(2));
-				}				
-				
+				}
+
 			}
 		});
 
@@ -849,19 +897,34 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private void addExecutionModelTab() {
 
-		CTabItem executionModelItem = new CTabItem(wLeftFolder, SWT.NONE);
+		CTabItem executionModelItem = new CTabItem(wBottomFolder, SWT.NONE);
 		executionModelItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label"));
 
-		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
-		wPanel.setLayout(new GridLayout(2, true));
+		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
+		wPanel.setLayout(new FormLayout());
+		props.setLook(wPanel);
 
 		Label lRubyCompat = new Label(wPanel, SWT.RIGHT);
 		lRubyCompat.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Compatibility"));
-		lRubyCompat.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END | GridData.GRAB_HORIZONTAL));
-
+		props.setLook(lRubyCompat);
+		
+		FormData fdlRubyCompat = new FormData();
+		fdlRubyCompat.left = new FormAttachment(0, 0);
+		fdlRubyCompat.right = new FormAttachment(middle, -margin);
+		fdlRubyCompat.top = new FormAttachment(0, margin);
+		lRubyCompat.setLayoutData(fdlRubyCompat);		
+		
 		wRubyCompat = new CCombo(wPanel, SWT.READ_ONLY | SWT.BORDER);
 		wRubyCompat.setItems(new String[] { "Ruby 1.8", "Ruby 1.9" });
-		wRubyCompat.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL));
+		
+		props.setLook(wRubyCompat);
+		
+		FormData fdRubyCompat = new FormData();
+		fdRubyCompat.left = new FormAttachment(middle, 0);
+		fdRubyCompat.top = new FormAttachment(0, margin);
+		//fdRubyCompat.right = new FormAttachment(100, 0);
+		wRubyCompat.setLayoutData(fdRubyCompat);		
+		
 		wRubyCompat.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -886,6 +949,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		topRightLayout.marginWidth = 0;
 		topRightLayout.marginHeight = 0;
 		wTopRight.setLayout(topRightLayout);
+		props.setLook(wTopRight);
 
 		// script tab folder
 		wScriptsFolder = new CTabFolder(wTopRight, SWT.BORDER | SWT.RESIZE);
@@ -922,6 +986,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		// toolbar below the script window
 		wScriptToolBar = new ToolBar(wTopRight, SWT.FLAT | SWT.RIGHT);
+		props.setLook(wScriptToolBar);
 
 		itemSettings = new ToolItem(wScriptToolBar, SWT.NONE);
 		itemSettings.setImage(scriptImage);
@@ -968,6 +1033,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		// editing position label
 		wlEditingPosition = new Label(wTopRight, SWT.RIGHT);
 		wlEditingPosition.setText("0 : 0 ");
+		props.setLook(wlEditingPosition);
 
 		FormData fdPos = new FormData();
 		fdPos.left = new FormAttachment(100, -60);
@@ -979,10 +1045,11 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wlSyntaxCheck = new Label(wTopRight, SWT.LEFT);
 		wlSyntaxCheck.setText("");
 		FormData fdSyntaxCheck = new FormData();
-		fdSyntaxCheck.left = new FormAttachment(wScriptToolBar, 0);
+		fdSyntaxCheck.left = new FormAttachment(wScriptToolBar, margin);
 		fdSyntaxCheck.bottom = new FormAttachment(100, -margin + 1);
 		fdSyntaxCheck.right = new FormAttachment(wlEditingPosition, -margin);
 		wlSyntaxCheck.setLayoutData(fdSyntaxCheck);
+		props.setLook(wlSyntaxCheck);
 
 	}
 
@@ -1147,8 +1214,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	private void ok() {
 
 		// if there's syntax error, warn the user
-		if (!hasRowScript()){
-			
+		if (!hasRowScript()) {
+
 			MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.APPLICATION_MODAL);
 			box.setText(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogNoRowScript.Title"));
 			box.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.WarningDialogNoRowScript.Message", Const.CR));
@@ -1156,10 +1223,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 			if (answer == SWT.NO) {
 				return;
-			}			
-			
+			}
+
 		}
-		
+
 		stepname = wStepname.getText(); // return value
 
 		// generate scripts
@@ -1221,12 +1288,12 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private boolean hasRowScript() {
 
-		for(CTabItem item : wScriptsFolder.getItems()){
-			if (item.getData("role") == RubyScriptMeta.Role.ROW_SCRIPT){
+		for (CTabItem item : wScriptsFolder.getItems()) {
+			if (item.getData("role") == RubyScriptMeta.Role.ROW_SCRIPT) {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -1245,7 +1312,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	}
 
-	private void addSettingsArea() {
+	private void addLeftArea() {
 
 		// top left composite
 		wTopLeft = new Composite(wTop, SWT.NONE);
@@ -1253,6 +1320,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		topLeftLayout.marginWidth = 0;
 		topLeftLayout.marginHeight = 0;
 		wTopLeft.setLayout(topLeftLayout);
+		props.setLook(wTopLeft);
 
 		// header line
 
@@ -1280,6 +1348,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		});
 
 		addFieldSummaryTab();
+		addSamplesTab();
 
 		// layout tab folder below the label 
 		FormData fdLeftFolder = new FormData();
@@ -1291,6 +1360,157 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		// set selected item in tab
 		wLeftFolder.setSelection(0);
+
+	}
+
+	private void addSamplesTab() {
+
+		CTabItem samplesItem = new CTabItem(wLeftFolder, SWT.NONE);
+		samplesItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.Samples.Label"));
+
+		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
+		wPanel.setLayout(new FillLayout());
+		props.setLook(wPanel);
+		
+		wSamplesTree = new Tree(wPanel, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI);
+		wSamplesTree.setLayout(new FillLayout());
+		wSamplesTree.setHeaderVisible(true);
+		props.setLook(wSamplesTree);
+		
+		TreeColumn column1 = new TreeColumn(wSamplesTree, SWT.LEFT);
+		column1.setText(BaseMessages.getString(PKG, "RubyStepDialog.SampleTreeColumn.Sample"));
+		column1.setWidth(280);
+		TreeColumn column2 = new TreeColumn(wSamplesTree, SWT.LEFT);
+		column2.setText(BaseMessages.getString(PKG, "RubyStepDialog.SampleTreeColumn.Type"));
+		column2.setWidth(120);
+
+		File samplesDir = new File(pluginBaseFile.getAbsolutePath() + Const.FILE_SEPARATOR+ "samples");
+		
+		TreeItem rootTreeItem = new TreeItem(wSamplesTree, SWT.NONE);
+		rootTreeItem.setText(new String[] { "samples", "" });
+		rootTreeItem.setImage(folderImage);
+		rootTreeItem.setData("type", SampleType.DIR);
+		rootTreeItem.setData("file", samplesDir);
+
+		samplesHelper.fillSamplesDir(rootTreeItem, samplesDir);
+		rootTreeItem.setExpanded(true);
+
+		samplesItem.setControl(wPanel);
+
+		wSamplesTree.addMouseListener(new MouseAdapter() {
+
+			public void mouseDoubleClick(MouseEvent e) {
+				if (e.button != 1) return;
+				Point click = new Point(e.x, e.y);
+				TreeItem item = wSamplesTree.getItem(click);
+				if (item != null) {
+					openSample(item);
+				}
+
+			}
+
+		});
+		
+		addSamplesMenu();
+		
+
+	}
+
+	private void addSamplesMenu(){
+		
+		sampleMenu = new Menu(shell, SWT.POP_UP);
+
+		showSampleItem = new MenuItem(sampleMenu, SWT.PUSH);
+		showSampleItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.SamplesMenu.ShowSample"));
+		//showSampleItem.setImage(libScriptImage);
+		showSampleItem.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				for(TreeItem item : wSamplesTree.getSelection()){
+					openSample(item);
+				}
+			}
+		});
+
+		// menu is about to show, let's enable/disable stuff
+		sampleMenu.addListener(SWT.Show, new Listener() {
+			
+			@Override
+			public void handleEvent(Event e) {
+				showSampleItem.setEnabled(false);
+				// any non-folder selection enables the show sample 
+				for(TreeItem item : wSamplesTree.getSelection()){
+					switch((SampleType)item.getData("type")){
+					case TRANS:
+					case SCRIPT:
+					case WEB:
+						showSampleItem.setEnabled(true);
+						return;
+					}
+				} 
+			}
+		});
+		
+		wSamplesTree.setMenu(sampleMenu);
+		
+		
+	}
+	
+	private void openSample(TreeItem item) {
+
+		File f = (File) item.getData("file");
+		if (f != null && f.isFile()) {
+
+			SampleType type = (SampleType) item.getData("type");
+			switch (type) {
+
+			case SCRIPT:
+				try {
+					// add a new sample script
+					String title = RubyScriptMeta.getUniqueName(item.getText(), collectScripts());
+
+					RubyScriptMeta script = new RubyScriptMeta(title, FileUtils.readFileToString(f, "UTF-8"), Role.LIB_SCRIPT);
+					addScriptTab(script);
+					wScriptsFolder.setSelection(wScriptsFolder.getItemCount() - 1); // select newest tab
+
+					input.setChanged();
+					changedInDialog = true;
+
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				break;
+			case TRANS:
+				try {
+					// make a copy of the file in tmp dir and open it (prevents the original from be modified accidentally)
+					File tmpFile = new File(System.getProperty("java.io.tmpdir") + Const.FILE_SEPARATOR + f.getName());
+					FileUtils.copyFile(f, tmpFile);
+					Spoon.getInstance().openFile(tmpFile.toString(), false);
+
+					if (changedInDialog) {
+						MessageBox messageBox = new MessageBox(shell, SWT.ICON_QUESTION | SWT.NO | SWT.YES);
+						messageBox.setText(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Title"));
+						messageBox.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Message"));
+						if (messageBox.open() == SWT.YES) {
+							ok();
+						}
+					} else {
+						cancel();
+					}
+
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				break;
+			case WEB:
+				try {
+					BareBonesBrowserLaunch.openURL(f.toURI().toURL().toString());
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				}
+				break;
+			}
+
+		}
 
 	}
 
@@ -1318,9 +1538,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				addScriptTab(script);
 				input.setChanged();
 				changedInDialog = true;
-				
+
 				wScriptsFolder.setSelection(wScriptsFolder.getItemCount() - 1); // select newest tab
-				highlightSyntax();
+
 			}
 		});
 		new MenuItem(scriptMenu, SWT.SEPARATOR);
@@ -1640,20 +1860,20 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 	}
 
 	private boolean checkForParseErrors() {
-		
+
 		boolean hasErrors = false;
-		
-		for(CTabItem item : wScriptsFolder.getItems()){
+
+		for (CTabItem item : wScriptsFolder.getItems()) {
 			StyledTextComp wText = (StyledTextComp) item.getControl();
-			if (parseErrorHelper.hasParseErrors(wText)){
+			if (parseErrorHelper.hasParseErrors(wText)) {
 				wScriptsFolder.setSelection(item);
 				parseErrorHelper.showParseErrors(wText, wlSyntaxCheck);
 				hasErrors = true;
 				break;
 			}
 		}
-		
-		if (!hasErrors){
+
+		if (!hasErrors) {
 			wlSyntaxCheck.setText("OK");
 		}
 		return !hasErrors;
