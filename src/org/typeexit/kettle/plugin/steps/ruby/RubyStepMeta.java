@@ -467,7 +467,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			rubyVersion = RubyVersion.valueOf(rep.getStepAttributeString(id_step, "ruby_version"));
 			
 			// load ouput fields
-			int nrFields = rep.countNrStepAttributes(id_step, "ouput_field_name");
+			int nrFields = rep.countNrStepAttributes(id_step, "output_field_name");
 			outputFields.clear();
 			
 			for(int i=0;i<nrFields;i++){
