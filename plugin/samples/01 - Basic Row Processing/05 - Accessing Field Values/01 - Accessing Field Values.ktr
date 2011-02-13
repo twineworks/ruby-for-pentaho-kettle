@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>simple</name>
+    <name>Accessing Field Values</name>
     <description/>
     <extended_description/>
     <trans_version/>
     <trans_type>Normal</trans_type>
+    <trans_status>0</trans_status>
     <directory>&#47;</directory>
     <parameters>
     </parameters>
@@ -61,14 +62,46 @@
     <clusterschemas>
     </clusterschemas>
   <created_user>-</created_user>
-  <created_date>2011&#47;02&#47;12 11:34:57.000</created_date>
+  <created_date>2011&#47;02&#47;13 21:45:25.023</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2011&#47;02&#47;12 11:34:57.000</modified_date>
+  <modified_date>2011&#47;02&#47;13 21:45:25.023</modified_date>
   </info>
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Generate Rows</from><to>Ruby Scripting</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Generate Rows</from><to>Ruby Scripting</to><enabled>Y</enabled> </hop>  <hop> <from>Ruby Scripting</from><to>output</to><enabled>Y</enabled> </hop>  </order>
+  <step>
+    <name>Generate Rows</name>
+    <type>RowGenerator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <fields>
+      <field>
+        <name>text</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif>test value</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+    </fields>
+    <limit>10</limit>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>187</xloc>
+      <yloc>212</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
   <step>
     <name>Ruby Scripting</name>
     <type>TypeExitRubyStep</type>
@@ -82,22 +115,42 @@
 	<scripts>
 		<script>
 			<title>Ruby Script</title>
-			<body># your script goes here my friend
+			<body>###############################################################################
+# Ruby Scripting Step for Kettle 
+# Created by Slawomir Chodnicki 
+# http:&#47;&#47;type-exit.org
+###############################################################################
+# Each processed row is passed to the ruby script as a ruby hash indexed by
+# field name. It is made available as the global variable $row. 
+#
+# A ruby script is expected to evaluate to one of the following:
+#    
+#    nil    - in this case no output row is produced
+#
+#    hash   - the hash represents the output row and should contain all
+#             specified output fields indexed by field name
+#
+#    array  - the array may contain nil values or hashes. Each hash value
+#             produces an output row
+#           
+# The following script converts the incoming string field &quot;text&quot; to uppercase
+# and saves it in the new field &quot;text_upper&quot;. 
 
-$row[&quot;RUBY_VERSION&quot;] = RUBY_VERSION
+# calculate upper case version of text
+$row[&quot;text_upper&quot;] = $row[&quot;text&quot;].upcase()
 
+# make sure the script evaluates to a row hash
 $row
-
 </body>
 			<role>ROW_SCRIPT</role>
 		</script>
 	</scripts>
-	<rubyVersion>RUBY_1_9</rubyVersion>
+	<rubyVersion>RUBY_1_8</rubyVersion>
 	<clearInputFields>N</clearInputFields>
 
 	<outputFields>
 		<outputField>
-			<name>RUBY_VERSION</name>
+			<name>text_upper</name>
 			<type>2</type>
 			<update>N</update>
 		</outputField>
@@ -110,15 +163,15 @@ $row
 	</targetSteps>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>245</xloc>
-      <yloc>105</yloc>
+      <xloc>325</xloc>
+      <yloc>212</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
 
   <step>
-    <name>Generate Rows</name>
-    <type>RowGenerator</type>
+    <name>output</name>
+    <type>Dummy</type>
     <description/>
     <distribute>Y</distribute>
     <copies>1</copies>
@@ -126,46 +179,10 @@ $row
            <method>none</method>
            <schema_name/>
            </partitioning>
-    <fields>
-      <field>
-        <name>id</name>
-        <type>Integer</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif>666</nullif>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>nums</name>
-        <type>String</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif>9846-763-999-09265</nullif>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>text</name>
-        <type>String</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif>this is my text</nullif>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-    </fields>
-    <limit>10000000</limit>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>93</xloc>
-      <yloc>111</yloc>
+      <xloc>480</xloc>
+      <yloc>212</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
