@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>Simple Counter</name>
+    <name>Remembering Previous Rows</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -69,10 +69,10 @@
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Generate Rows</from><to>Counter</to><enabled>Y</enabled> </hop>  <hop> <from>Counter</from><to>output</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Add value of previous row</from><to>output</to><enabled>Y</enabled> </hop>  <hop> <from>Data Grid</from><to>Add value of previous row</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Generate Rows</name>
-    <type>RowGenerator</type>
+    <name>Data Grid</name>
+    <type>DataGrid</type>
     <description/>
     <distribute>Y</distribute>
     <copies>1</copies>
@@ -82,28 +82,32 @@
            </partitioning>
     <fields>
       <field>
-        <name>test_field</name>
+        <name>testfield</name>
         <type>String</type>
         <format/>
         <currency/>
         <decimal/>
         <group/>
-        <nullif>test value</nullif>
         <length>-1</length>
         <precision>-1</precision>
       </field>
     </fields>
-    <limit>10</limit>
+    <data>
+      <line> <item>lorem</item> </line>
+      <line> <item>ipsum</item> </line>
+      <line> <item>dolor</item> </line>
+      <line> <item>mat</item> </line>
+    </data>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>187</xloc>
-      <yloc>212</yloc>
+      <xloc>158</xloc>
+      <yloc>178</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
 
   <step>
-    <name>Counter</name>
+    <name>Add value of previous row</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>
@@ -120,34 +124,21 @@
 # Created by Slawomir Chodnicki 
 # http:&#47;&#47;type-exit.org
 ###############################################################################
-# Each processed row is passed to the ruby script as a ruby hash indexed by
-# field name. It is made available as the global variable $row. 
-#
-# A ruby script is expected to evaluate to one of the following:
-#    
-#    nil    - in this case no output row is produced
-#
-#    hash   - the hash represents the output row and should contain all
-#             specified output fields indexed by field name
-#
-#    array  - the array may contain nil values or hashes. Each hash value
-#             produces an output row
-#           
-# The following script implements a simple counter. Make sure to specify the 
-# output field &quot;counter&quot; of type &quot;Integer&quot; to see the new field in the output. 
+# This script remembers the previous row, and adds its &quot;testfield&quot; to the
+# running row. 
+# 
 
-# initialize counter variable
-my_counter ||= 0
+# initialize previous row variable
+prev_row ||= nil
 
-# increment counter variable
-my_counter += 1
+# if there&apos;s a previous row put its &quot;testfield&quot; value into &quot;prev_value&quot;
+$row[&quot;prev_value&quot;] = prev_row[&quot;testfield&quot;] unless prev_row == nil
 
-# set field counter to the value of counter variable
-$row[&quot;counter&quot;] = my_counter
+# remember this row as the previous row now
+prev_row = $row
 
-# make sure the script evaluates to a row hash
-$row
-</body>
+# evaluate to the row hash
+$row</body>
 			<role>ROW_SCRIPT</role>
 		</script>
 	</scripts>
@@ -156,8 +147,8 @@ $row
 
 	<outputFields>
 		<outputField>
-			<name>counter</name>
-			<type>5</type>
+			<name>prev_value</name>
+			<type>2</type>
 			<update>N</update>
 		</outputField>
 	</outputFields>
@@ -169,8 +160,8 @@ $row
 	</targetSteps>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>325</xloc>
-      <yloc>212</yloc>
+      <xloc>308</xloc>
+      <yloc>178</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -187,8 +178,8 @@ $row
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>480</xloc>
-      <yloc>212</yloc>
+      <xloc>463</xloc>
+      <yloc>178</yloc>
       <draw>Y</draw>
       </GUI>
     </step>

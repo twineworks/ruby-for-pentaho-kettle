@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>Simple Counter</name>
+    <name>Adding FIelds</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -69,41 +69,9 @@
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Generate Rows</from><to>Counter</to><enabled>Y</enabled> </hop>  <hop> <from>Counter</from><to>output</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Generate Rows</from><to>Add&#47;Modify some fields</to><enabled>Y</enabled> </hop>  <hop> <from>Add&#47;Modify some fields</from><to>output</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Generate Rows</name>
-    <type>RowGenerator</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <fields>
-      <field>
-        <name>test_field</name>
-        <type>String</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif>test value</nullif>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-    </fields>
-    <limit>10</limit>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>187</xloc>
-      <yloc>212</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Counter</name>
+    <name>Add&#47;Modify some fields</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>
@@ -120,34 +88,20 @@
 # Created by Slawomir Chodnicki 
 # http:&#47;&#47;type-exit.org
 ###############################################################################
-# Each processed row is passed to the ruby script as a ruby hash indexed by
-# field name. It is made available as the global variable $row. 
+# When returning row hashes, you may omit all fields that are not mentioned in
+# the output fields definition.
 #
-# A ruby script is expected to evaluate to one of the following:
-#    
-#    nil    - in this case no output row is produced
-#
-#    hash   - the hash represents the output row and should contain all
-#             specified output fields indexed by field name
-#
-#    array  - the array may contain nil values or hashes. Each hash value
-#             produces an output row
-#           
-# The following script implements a simple counter. Make sure to specify the 
-# output field &quot;counter&quot; of type &quot;Integer&quot; to see the new field in the output. 
+# The following script replaces the field value of the string field &quot;text&quot; and
+# adds some more fields. 
+# Only the modified&#47;added fields appear in the returned hash.
+# 
 
-# initialize counter variable
-my_counter ||= 0
-
-# increment counter variable
-my_counter += 1
-
-# set field counter to the value of counter variable
-$row[&quot;counter&quot;] = my_counter
-
-# make sure the script evaluates to a row hash
-$row
-</body>
+{
+	&quot;text&quot; =&gt; $row[&quot;text&quot;].upcase,
+	&quot;number_field&quot; =&gt; 42.5,
+	&quot;integer_field&quot; =&gt; 666,
+	&quot;date_field&quot; =&gt; Time.now
+}</body>
 			<role>ROW_SCRIPT</role>
 		</script>
 	</scripts>
@@ -156,8 +110,23 @@ $row
 
 	<outputFields>
 		<outputField>
-			<name>counter</name>
+			<name>text</name>
+			<type>2</type>
+			<update>Y</update>
+		</outputField>
+		<outputField>
+			<name>number_field</name>
+			<type>1</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>integer_field</name>
 			<type>5</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>date_field</name>
+			<type>3</type>
 			<update>N</update>
 		</outputField>
 	</outputFields>
@@ -169,8 +138,40 @@ $row
 	</targetSteps>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>325</xloc>
-      <yloc>212</yloc>
+      <xloc>324</xloc>
+      <yloc>199</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Generate Rows</name>
+    <type>RowGenerator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <fields>
+      <field>
+        <name>text</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif>test value</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+    </fields>
+    <limit>10</limit>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>186</xloc>
+      <yloc>199</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -187,8 +188,8 @@ $row
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>480</xloc>
-      <yloc>212</yloc>
+      <xloc>479</xloc>
+      <yloc>199</yloc>
       <draw>Y</draw>
       </GUI>
     </step>

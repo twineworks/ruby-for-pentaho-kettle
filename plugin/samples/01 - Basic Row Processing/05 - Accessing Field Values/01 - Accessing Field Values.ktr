@@ -69,7 +69,7 @@
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Generate Rows</from><to>Ruby Scripting</to><enabled>Y</enabled> </hop>  <hop> <from>Ruby Scripting</from><to>output</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Generate Rows</from><to>Accessing fields values</to><enabled>Y</enabled> </hop>  <hop> <from>Accessing fields values</from><to>output</to><enabled>Y</enabled> </hop>  </order>
   <step>
     <name>Generate Rows</name>
     <type>RowGenerator</type>
@@ -103,7 +103,7 @@
     </step>
 
   <step>
-    <name>Ruby Scripting</name>
+    <name>Accessing fields values</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>

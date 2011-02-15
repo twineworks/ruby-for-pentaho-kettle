@@ -69,9 +69,45 @@
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Ruby Scripting</from><to>output</to><enabled>Y</enabled> </hop>  <hop> <from>Data Grid</from><to>Ruby Scripting</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Duplicate Row</from><to>output</to><enabled>Y</enabled> </hop>  <hop> <from>Data Grid</from><to>Duplicate Row</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Ruby Scripting</name>
+    <name>Data Grid</name>
+    <type>DataGrid</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <fields>
+      <field>
+        <name>testfield</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+    </fields>
+    <data>
+      <line> <item>lorem</item> </line>
+      <line> <item>ipsum</item> </line>
+      <line> <item>dolor</item> </line>
+      <line> <item>mat</item> </line>
+    </data>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>175</xloc>
+      <yloc>208</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Duplicate Row</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>
@@ -144,42 +180,6 @@
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>480</xloc>
-      <yloc>208</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Data Grid</name>
-    <type>DataGrid</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <fields>
-      <field>
-        <name>testfield</name>
-        <type>String</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-    </fields>
-    <data>
-      <line> <item>lorem</item> </line>
-      <line> <item>ipsum</item> </line>
-      <line> <item>dolor</item> </line>
-      <line> <item>mat</item> </line>
-    </data>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>175</xloc>
       <yloc>208</yloc>
       <draw>Y</draw>
       </GUI>
