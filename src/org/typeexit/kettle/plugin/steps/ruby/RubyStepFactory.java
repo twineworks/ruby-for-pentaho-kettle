@@ -9,18 +9,6 @@ import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 
 public class RubyStepFactory {
 
-//	private static ScriptingContainer containerInstance;
-	
-//	synchronized public static ScriptingContainer getScriptingContainer(){
-//		
-//		if (containerInstance == null){
-//			containerInstance = createScriptingContainer();
-//		}
-//		
-//		return containerInstance;
-//		
-//	}
-	
 	synchronized public static ScriptingContainer createScriptingContainer(boolean withPersistentLocalVars, RubyVersion rubyVersion){
 		
 		ScriptingContainer c = new ScriptingContainer(LocalContextScope.SINGLETHREAD, (withPersistentLocalVars)?LocalVariableBehavior.PERSISTENT:LocalVariableBehavior.TRANSIENT);

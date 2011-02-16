@@ -11,6 +11,7 @@
 		<libraries>
     		<library name="ruby-step.jar"/>
     		<library name="lib/jruby-complete-1.6.0.RC2.jar"/>
+    		
 		</libraries>
 		
 </plugin>
