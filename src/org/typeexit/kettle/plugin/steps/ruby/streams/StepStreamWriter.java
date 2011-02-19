@@ -11,7 +11,7 @@ import org.pentaho.di.trans.step.BaseStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
-public class StepStreamWriter {
+public class StepStreamWriter{
 
 	private RowSet rs;
 	private BaseStep step;

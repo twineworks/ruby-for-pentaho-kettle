@@ -81,6 +81,10 @@ public class SimpleExecutionModel implements ExecutionModel {
 			// temporary place for the output a script might produce
 			data.rowList = new LinkedList<Object[]>();
 			
+			// add << aliases to the java stream writers
+			data.container.runScriptlet("JavaUtilities.extend_proxy('org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamWriter') {alias << write}\n");
+			data.container.runScriptlet("JavaUtilities.extend_proxy('org.typeexit.kettle.plugin.steps.ruby.streams.ErrorStreamWriter') {alias << write}\n");
+			data.container.runScriptlet("JavaUtilities.extend_proxy('org.typeexit.kettle.plugin.steps.ruby.streams.StepStreamWriter') {alias << write}\n");
 
 		} catch (Exception e) {
 			step.logError("Error Initializing Ruby Scripting Step", e);
@@ -149,6 +153,18 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			data.container.put("$error", new ErrorStreamWriter(this));
 		}
+		
+		// put the target steps into ruby scope
+		RubyHash targetSteps = new RubyHash(data.runtime);
+
+		int t=0;
+		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
+			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
+			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
+			t++;
+		}
+		
+		data.container.put("$target_steps", targetSteps);			
 
 	}
 
@@ -321,7 +337,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			}
 			
 			// this must be done before the first call to getRow() in case there are info streams present
-			initSupplementRowStreams();
+			initInfoRowStreams();
 		}
 
 		// directinput means, there's no info steps and at least one step providing data
@@ -401,7 +417,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	private void initSupplementRowStreams() throws KettleStepException {
+	private void initInfoRowStreams() throws KettleStepException {
 		
 		// put the info steps into ruby scope
 		RubyHash infoSteps = new RubyHash(data.runtime);
@@ -426,17 +442,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 		
 		data.container.put("$info_steps", infoSteps);
 		
-		// put the target steps into ruby scope
-		RubyHash targetSteps = new RubyHash(data.runtime);
-
-		int t=0;
-		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
-			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
-			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
-			t++;
-		}
-		
-		data.container.put("$target_steps", targetSteps);			
 		
 	}
 
