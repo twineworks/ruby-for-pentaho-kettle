@@ -1,0 +1,48 @@
+= Developers
+
+- {Gregory Brown}[mailto:gregory.t.brown@gmail.com]
+- {Dudley Flanders}[mailto:dudley@misnomer.us]
+- {James Healy}[mailto:jimmy@deefa.com]
+- Dinko Mehinovic
+- {Michael Milner}[mailto:mikem836@gmail.com]
+
+= Contributors / People we've (legally) stolen from:
+
+Iain Broadfoot:
+ - RuportDay 2006 Participant
+
+Eric Pugh:
+ - RuportDay 2006 Participant
+
+James Edward Gray II:
+  - Original inspiration via query.rb
+  - system_extensions.rb
+
+Mathijs Mohlmann:
+ - Performance Enhancement
+     TextPlugin r264-r265
+     HTMLPlugin r266
+
+Francis Hwang:
+ - SQLSplit
+
+Simon Claret:
+ - Initial PDF table support (now deprecated)
+
+Daniel Berger:
+ - we vendored and modified attempt.rb to support it directly in Report.
+   Original website: http://raa.ruby-lang.org/project/attempt/
+
+Marshall T. Vandegrift:
+ - Fixed a bug in Record's struct-like accessors (method_missing)
+ - Provided performance enhancements and tests for query.rb
+ - Improved alignment for Text Tables.
+
+Stefan Mahlitz:
+ - Table#sort_rows_by
+
+Chris Carter
+ - Table#remove_columns (r440)
+
+Dave Nelson
+ - Grouping#sigma (r1131)

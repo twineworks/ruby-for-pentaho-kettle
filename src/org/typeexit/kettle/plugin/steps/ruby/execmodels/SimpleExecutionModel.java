@@ -1,5 +1,6 @@
 package org.typeexit.kettle.plugin.steps.ruby.execmodels;
 
+import java.io.File;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -15,8 +16,11 @@ import org.jruby.RubyTime;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.plugins.PluginRegistry;
+import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -54,9 +58,14 @@ public class SimpleExecutionModel implements ExecutionModel {
 	public boolean onInit() {
 
 		try {
+			
 			data.container = RubyStepFactory.createScriptingContainer(true, meta.getRubyVersion());
 
 			data.runtime = data.container.getProvider().getRuntime();
+			
+			// set gem home if specified
+			setGemHome();
+			
 			data.container.setScriptFilename(meta.getRowScript().getTitle());
 			data.rubyScriptObject = data.container.parse(meta.getRowScript().getScript(), 0);
 			
@@ -92,6 +101,31 @@ public class SimpleExecutionModel implements ExecutionModel {
 		}
 
 		return true;
+	}
+
+	private void setGemHome() {
+		
+		// if specified directly, take it
+		String gemHomeString = step.environmentSubstitute(meta.getGemHome());
+
+		// if not, fall back to RUBY_GEM_HOME
+		if (Const.isEmpty(gemHomeString) && !Const.isEmpty(step.getVariable("RUBY_GEM_HOME"))){
+			gemHomeString = step.environmentSubstitute("${RUBY_GEM_HOME}");
+		}
+		
+		// if that fails, use the standard one
+		if (Const.isEmpty(gemHomeString)){
+			gemHomeString = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString() + Const.FILE_SEPARATOR + "gems";		
+		}
+		
+		if (!Const.isEmpty(gemHomeString)){
+			
+			File gemHomePath = new File(gemHomeString);
+			gemHomePath = gemHomePath.getAbsoluteFile();
+			
+			RubyHash configHash = (RubyHash) data.container.parse("require 'rbconfig'; RbConfig::CONFIG").run();
+			configHash.put("default_gem_home", gemHomePath.getAbsolutePath());
+		}
 	}
 
 	@Override
@@ -140,6 +174,8 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		data.cacheFieldNames(data.inputRowMeta);
 		data.cacheFieldNames(data.outputRowMeta);
+		
+		data.baseRowMeta = meta.isClearInputFields()?data.emptyRowMeta:data.inputRowMeta; 
 		
 		// put the standard streams into ruby scope
 		data.container.put("$output", new StdStreamWriter(this));
@@ -290,7 +326,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, Object[] r, List<Object[]> rowList, List<ValueMetaInterface> forFields, RowMetaInterface forRow) throws KettleException {
+	public void fetchRowsFromScriptOutput(IRubyObject rubyObject, RowMetaInterface inRow, Object[] r, List<Object[]> rowList, List<ValueMetaInterface> forFields, RowMetaInterface forRow) throws KettleException {
 
 		// skip nil result rows
 		if (rubyObject.isNil()) {
@@ -299,7 +335,13 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
-			r = RowDataUtil.resizeArray(data.inputRowMeta.cloneRow(r), data.outputRowMeta.size());
+			// clone the row only if necessary
+			if (rowList.size() > 0){
+				r = RowDataUtil.resizeArray(inRow.cloneRow(r), forRow.size());
+			}
+			else{
+				r = RowDataUtil.resizeArray(r, forRow.size());
+			}
 			applyRubyHashToRow(r, (RubyHash) rubyObject, forFields, forRow);
 			rowList.add(r);
 			return;
@@ -310,13 +352,14 @@ public class SimpleExecutionModel implements ExecutionModel {
 			RubyArray rubyArray = (RubyArray) rubyObject;
 			int length = rubyArray.getLength();
 			for (int i = 0; i < length; i++) {
-				fetchRowsFromScriptOutput(rubyArray.entry(i), r, rowList, forFields, forRow);
+				fetchRowsFromScriptOutput(rubyArray.entry(i), inRow, r, rowList, forFields, forRow);
 			}
 			return;
 		}
 
-		// at this point the returned object is not nil, not a hash and not an array, give up (may use convertToHash in future for convertible objects..)
-		throw new KettleException("ruby script returned non-hash value: " + rubyObject.toString() + " as a result ");
+		// at this point the returned object is not nil, not a hash and not an array, let's ignore the output but warn in the log
+		step.logBasic("WARNING: script returned non-hash value: " + rubyObject.toString() + " as a result ");
+		
 
 	}
 
@@ -363,7 +406,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 				IRubyObject scriptResult = data.rubyScriptObject.run();
 
 				data.rowList.clear();
-				fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
+				fetchRowsFromScriptOutput(scriptResult, data.baseRowMeta, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
 
 				// now if the script has output rows, write them to the main output stream
 				for (Object[] outrow : data.rowList) {
@@ -398,7 +441,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 			IRubyObject scriptResult = data.rubyScriptObject.run();
 
 			data.rowList.clear();
-			fetchRowsFromScriptOutput(scriptResult, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
+			fetchRowsFromScriptOutput(scriptResult, data.baseRowMeta, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
 
 			// now if the script has output rows, write them to the main output stream
 			for (Object[] outrow : data.rowList) {

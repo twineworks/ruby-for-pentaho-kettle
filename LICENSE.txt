@@ -1,6 +1,13 @@
-The Ruby plugin is licensed under the LGPL version 2.1. The jRuby
-library's is using the Apache 2.0 license which is included in 
-lib/jruby-complete*.jar:/META-INF/LICENSE.txt.
+The Ruby plugin is licensed under the LGPL version 2.1 found below 
+
+The jRuby librarie's License is included in 
+lib/jruby-complete.jar:/META-INF/LICENSE.txt.
+
+The demo gems bundled in the gems folder have each a license of
+their own. The gems make their license available in their respective
+folder in gems/gems/<gem_name>-<gem_version> 
+
+----------------------------------------------------------------------
 
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999

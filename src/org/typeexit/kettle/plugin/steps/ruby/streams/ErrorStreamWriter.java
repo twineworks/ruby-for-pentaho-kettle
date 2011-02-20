@@ -6,6 +6,8 @@ import java.util.List;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
 import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
@@ -19,6 +21,7 @@ public class ErrorStreamWriter {
 	private List<Object[]> errRowList;
 	private int rowSize;
 	private int errorSize;
+	private RowMetaInterface inRow;
 	
 	private int idxErrorCount;
 	private int idxErrorField;
@@ -39,6 +42,8 @@ public class ErrorStreamWriter {
 		idxErrorField = data.errorRowMeta.indexOfValue(data.stepErrorMeta.getErrorFieldsValuename());
 		idxErrorDesc = data.errorRowMeta.indexOfValue(data.stepErrorMeta.getErrorDescriptionsValuename());
 		idxErrorCode = data.errorRowMeta.indexOfValue(data.stepErrorMeta.getErrorCodesValuename());
+		
+		inRow = new RowMeta();
 
 	}
 
@@ -47,10 +52,10 @@ public class ErrorStreamWriter {
 		Object[] r = new Object[rowSize];
 
 		rowList.clear();
-		model.fetchRowsFromScriptOutput(rubyOut, r, rowList, data.inputRowMeta.getValueMetaList(), data.inputRowMeta);
+		model.fetchRowsFromScriptOutput(rubyOut, inRow, r, rowList, data.inputRowMeta.getValueMetaList(), data.inputRowMeta);
 
 		errRowList.clear();
-		model.fetchRowsFromScriptOutput(rubyOut, new Object[errorSize], errRowList, data.errorRowMeta.getValueMetaList(), data.errorRowMeta);
+		model.fetchRowsFromScriptOutput(rubyOut, inRow, new Object[errorSize], errRowList, data.errorRowMeta.getValueMetaList(), data.errorRowMeta);
 		
 		int i=0;
 		for (Object[] outRow : rowList) {

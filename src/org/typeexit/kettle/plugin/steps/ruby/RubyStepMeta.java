@@ -54,6 +54,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	private List<ValueMetaInterface> affectedFields;
 	private boolean clearInputFields;
 	private RubyVersion rubyVersion;
+	private String gemHome;
 
 	static public enum RubyVersion {
 		RUBY_1_8,
@@ -182,6 +183,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		rubyVariables = new ArrayList<RubyVariableMeta>();
 		clearInputFields = false;
 		rubyVersion = RubyVersion.RUBY_1_8;
+		gemHome = "";
 	}
 
 	public RubyStepMeta clone() {
@@ -304,7 +306,8 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 		}
 		retval.append(TAB).append("</targetSteps>").append(Const.CR);		
 		
-		
+		// save gem home
+		retval.append(TAB).append(XMLHandler.addTagValue("gemHome", gemHome));
 		
 		return retval.toString();
 	}
@@ -387,6 +390,9 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				String value = XMLHandler.getTagValue(sNode, "role");
 				targetSteps.add(new RoleStepMeta(name, value));
 			}			
+			
+			// load gem home
+			gemHome = Const.NVL(XMLHandler.getTagValue(stepnode, "gemHome"), "");
 						
 
 		} catch (Exception e) {
@@ -438,6 +444,10 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				rep.saveStepAttribute(id_transformation, id_step, i, "target_step_name", targetSteps.get(i).getStepName());
 				rep.saveStepAttribute(id_transformation, id_step, i, "target_step_role", targetSteps.get(i).getRoleName());
 			}				
+			
+			// save gem home
+			rep.saveStepAttribute(id_transformation, id_step, "gem_home", gemHome);
+			
 			
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnableToSaveStepInfoToRepository") + id_step, e);
@@ -514,6 +524,10 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 				);
 				targetSteps.add(target);
 			}				
+			
+			// load gem home 
+			gemHome = rep.getStepAttributeString(id_step, "gem_home");
+			
 			
 		} catch (Exception e) {
 			throw new KettleException(BaseMessages.getString(PKG, "RubyStep.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -678,6 +692,14 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 	
 	public void setRubyVersion(RubyVersion ver){
 		rubyVersion = ver;
+	}
+
+	public String getGemHome() {
+		return gemHome;
+	}
+
+	public void setGemHome(String gemHome) {
+		this.gemHome = gemHome;
 	}
 	
 }

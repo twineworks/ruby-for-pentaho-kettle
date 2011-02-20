@@ -1,0 +1,16 @@
+== 0.0.3 ==
+
+* Moved all classes under Weakling module
+* WeakRef no longer extends Delegate
+* WeakRef#__getobj__ is now just #get
+* IdHash now includes Enumerable
+* Added specs for most behavior
+
+== 0.0.2 ==
+
+* Minor compatibility tweak for the WeakRef replacement impl, to match JRuby
+
+== 0.0.1 ==
+
+* Initial release
+* RefQueue and IdHash support

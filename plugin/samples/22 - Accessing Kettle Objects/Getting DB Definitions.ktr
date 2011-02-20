@@ -149,7 +149,7 @@
 #
 # See http:&#47;&#47;javadoc.pentaho.com&#47;kettle&#47; for the Kettle API docs 
 
-# See the Kettle source at svn:&#47;&#47;source.pentaho.org&#47;svnkettleroot&#47;
+# See the Kettle source at svn:&#47;&#47;source.pentaho.org&#47;svnkettleroot&#47; for the real thing
 # 
 rows = []
 

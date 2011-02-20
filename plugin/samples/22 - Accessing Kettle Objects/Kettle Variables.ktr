@@ -69,9 +69,9 @@
   <notepads>
   </notepads>
   <order>
-  <hop> <from>Using Kettle Variables</from><to>out</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Read Kettle Variables</from><to>out</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Using Kettle Variables</name>
+    <name>Read Kettle Variables</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>
@@ -99,15 +99,14 @@
 #
 
 # write something to log
-message = $step.environment_substitute(&quot;You are running Kettle version: ${Internal.Kettle.Version}&quot;)
 $step.log_basic(&quot;*************************************************************&quot;)
-$step.log_basic(message)
+$step.log_basic($step.environment_substitute(&quot;You are running Kettle version: ${Internal.Kettle.Version}&quot;))
 $step.log_basic(&quot;*************************************************************&quot;)
 
 # accumulate all variables as rows with &quot;var&quot; and &quot;value&quot; fields
 rows = []
 
-$step.list_variables.each do |name|
+$step.list_variables.sort.each do |name|
 	rows &lt;&lt; {&quot;var&quot; =&gt; name, &quot;value&quot; =&gt; $step.get_variable(name)}
 end
 
@@ -137,6 +136,7 @@ rows</body>
 	</infoSteps>
 	<targetSteps>
 	</targetSteps>
+	<gemHome/>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>156</xloc>

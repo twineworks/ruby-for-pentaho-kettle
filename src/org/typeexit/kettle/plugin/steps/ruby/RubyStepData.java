@@ -8,6 +8,7 @@ import org.jruby.RubyString;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
@@ -38,6 +39,8 @@ public class RubyStepData extends BaseStepData implements StepDataInterface {
 	
 	public HashMap<String, RubyString> rubyStringCache = new HashMap<String, RubyString>();
 	public HashMap<RowMetaInterface, HashMap<String, Integer>> fieldIndexCache = new HashMap<RowMetaInterface, HashMap<String, Integer>>();
+	public RowMetaInterface emptyRowMeta = new RowMeta();
+	public RowMetaInterface baseRowMeta;
 	
     public RubyStepData()
 	{

@@ -2,17 +2,18 @@ package org.typeexit.kettle.plugin.steps.ruby;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
-import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.ByteArrayLexerSource;
@@ -24,12 +25,8 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParserResult;
 import org.jruby.parser.Tokens;
-import org.jruby.util.KCode;
-
-import java.util.Arrays;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
-import org.apache.commons.lang.ArrayUtils;
 
 public class RubyStepSyntaxHighlighter {
 

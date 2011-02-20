@@ -73,6 +73,7 @@ import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.pentaho.di.ui.core.widget.TableView;
+import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
@@ -211,6 +212,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	private int middle;
 
+	private TextVar wGemHome;
+
 	public RubyStepDialog(Shell parent, Object in, TransMeta transMeta, String sname) {
 		super(parent, (BaseStepMeta) in, transMeta, sname);
 		input = (RubyStepMeta) in;
@@ -256,15 +259,15 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		String pluginBaseDir = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString();
 		String pluginImageDir = pluginBaseDir + Const.FILE_SEPARATOR + "images" + Const.FILE_SEPARATOR;
-		
+
 		URL pluginBaseURL = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory();
-		
+
 		try {
 			pluginBaseFile = new File(pluginBaseURL.toURI());
 		} catch (URISyntaxException e) {
 			pluginBaseFile = new File(pluginBaseURL.getPath());
 		}
-		
+
 		try {
 
 			scriptImage = guiResource.getImage(pluginImageDir + ("libScript.png"));
@@ -354,7 +357,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		topLayout.marginHeight = Const.FORM_MARGIN;
 		wTop.setLayout(topLayout);
 		props.setLook(wTop);
-		
+
 		addLeftArea();
 		addScriptArea();
 
@@ -407,7 +410,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		addTargetStepsTab();
 
 		addScopeVariablesTab();
-		addExecutionModelTab();
+		addRuntimeTab();
 
 		// set selected item in tab
 		wBottomFolder.setSelection(0);
@@ -630,7 +633,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
 		props.setLook(wPanel);
-		
+
 		FormData fdPanel = new FormData();
 		fdPanel.left = new FormAttachment(0, 0);
 		fdPanel.top = new FormAttachment(0, 0);
@@ -674,7 +677,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		column1.setWidth(180);
 		TreeColumn column2 = new TreeColumn(wTree, SWT.LEFT);
 		column2.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.Type"));
-		column2.setWidth(120);
+		column2.setWidth(90);
 		TreeColumn column3 = new TreeColumn(wTree, SWT.LEFT);
 		column3.setText(BaseMessages.getString(PKG, "RubyStepDialog.TreeColumn.AvailableAs"));
 		column3.setWidth(160);
@@ -765,7 +768,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 			@Override
 			public void handleEvent(Event e) {
-				if (e.button != 1) return;
+				if (e.button != 1)
+					return;
 				Point point = new Point(e.x, e.y);
 				TreeItem item = wTree.getItem(point);
 				if (item != null) {
@@ -893,10 +897,10 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 	}
 
-	private void addExecutionModelTab() {
+	private void addRuntimeTab() {
 
-		CTabItem executionModelItem = new CTabItem(wBottomFolder, SWT.NONE);
-		executionModelItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label"));
+		CTabItem runtimeItem = new CTabItem(wBottomFolder, SWT.NONE);
+		runtimeItem.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Label"));
 
 		Composite wPanel = new Composite(wBottomFolder, SWT.NONE);
 		wPanel.setLayout(new FormLayout());
@@ -905,24 +909,23 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		Label lRubyCompat = new Label(wPanel, SWT.RIGHT);
 		lRubyCompat.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.Compatibility"));
 		props.setLook(lRubyCompat);
-		
+
 		FormData fdlRubyCompat = new FormData();
 		fdlRubyCompat.left = new FormAttachment(0, 0);
 		fdlRubyCompat.right = new FormAttachment(middle, -margin);
 		fdlRubyCompat.top = new FormAttachment(0, margin);
-		lRubyCompat.setLayoutData(fdlRubyCompat);		
-		
+		lRubyCompat.setLayoutData(fdlRubyCompat);
+
 		wRubyCompat = new CCombo(wPanel, SWT.READ_ONLY | SWT.BORDER);
 		wRubyCompat.setItems(new String[] { "Ruby 1.8", "Ruby 1.9" });
-		
+
 		props.setLook(wRubyCompat);
-		
+
 		FormData fdRubyCompat = new FormData();
 		fdRubyCompat.left = new FormAttachment(middle, 0);
 		fdRubyCompat.top = new FormAttachment(0, margin);
-		//fdRubyCompat.right = new FormAttachment(100, 0);
-		wRubyCompat.setLayoutData(fdRubyCompat);		
-		
+		wRubyCompat.setLayoutData(fdRubyCompat);
+
 		wRubyCompat.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -935,7 +938,28 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 		});
 
-		executionModelItem.setControl(wPanel);
+		// add gem home folder entry
+
+		Label lGemHome = new Label(wPanel, SWT.RIGHT);
+		lGemHome.setText(BaseMessages.getString(PKG, "RubyStepDialog.ExecutionModel.GemHome"));
+		props.setLook(lGemHome);
+		FormData fdlGemHome = new FormData();
+		fdlGemHome.left = new FormAttachment(0, 0);
+		fdlGemHome.right = new FormAttachment(middle, -margin);
+		fdlGemHome.top = new FormAttachment(wRubyCompat, margin);
+		lGemHome.setLayoutData(fdlGemHome);
+
+		wGemHome = new TextVar(transMeta, wPanel, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		wGemHome.setText(input.getGemHome());
+		props.setLook(wGemHome);
+		wGemHome.addModifyListener(lsMod);
+		FormData fdGemHome = new FormData();
+		fdGemHome.left = new FormAttachment(middle, 0);
+		fdGemHome.top = new FormAttachment(wRubyCompat, margin);
+		fdGemHome.right = new FormAttachment(100, -margin);
+		wGemHome.setLayoutData(fdGemHome);
+
+		runtimeItem.setControl(wPanel);
 
 	}
 
@@ -1256,7 +1280,13 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		int varCount = wScopeVariables.nrNonEmpty();
 		for (int i = 0; i < varCount; i++) {
 			TableItem t = wScopeVariables.getNonEmpty(i);
-			rubyVars.add(new RubyVariableMeta(t.getText(1), t.getText(2)));
+			String varName = t.getText(1).trim();
+			if (!varName.startsWith("$")) {
+				varName = "$" + varName;
+			}
+			// replace white space with underscores
+			varName = varName.replaceAll("\\s", "_");
+			rubyVars.add(new RubyVariableMeta(varName, t.getText(2)));
 		}
 
 		// generate info steps
@@ -1278,6 +1308,9 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			TableItem t = wTargetSteps.getNonEmpty(i);
 			targetSteps.add(new RoleStepMeta(t.getText(2), t.getText(1)));
 		}
+
+		// set gem home
+		input.setGemHome(wGemHome.getText());
 
 		// make sure the input finds its info and target step metas alright
 		input.searchInfoAndTargetSteps(transMeta.getSteps());
@@ -1369,12 +1402,12 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		Composite wPanel = new Composite(wLeftFolder, SWT.NONE);
 		wPanel.setLayout(new FillLayout());
 		props.setLook(wPanel);
-		
+
 		wSamplesTree = new Tree(wPanel, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI);
 		wSamplesTree.setLayout(new FillLayout());
 		wSamplesTree.setHeaderVisible(true);
 		props.setLook(wSamplesTree);
-		
+
 		TreeColumn column1 = new TreeColumn(wSamplesTree, SWT.LEFT);
 		column1.setText(BaseMessages.getString(PKG, "RubyStepDialog.SampleTreeColumn.Sample"));
 		column1.setWidth(280);
@@ -1382,8 +1415,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		column2.setText(BaseMessages.getString(PKG, "RubyStepDialog.SampleTreeColumn.Type"));
 		column2.setWidth(120);
 
-		File samplesDir = new File(pluginBaseFile.getAbsolutePath() + Const.FILE_SEPARATOR+ "samples");
-		
+		File samplesDir = new File(pluginBaseFile.getAbsolutePath() + Const.FILE_SEPARATOR + "samples");
+
 		TreeItem rootTreeItem = new TreeItem(wSamplesTree, SWT.NONE);
 		rootTreeItem.setText(new String[] { "samples", "" });
 		rootTreeItem.setImage(folderImage);
@@ -1398,7 +1431,8 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		wSamplesTree.addMouseListener(new MouseAdapter() {
 
 			public void mouseDoubleClick(MouseEvent e) {
-				if (e.button != 1) return;
+				if (e.button != 1)
+					return;
 				Point click = new Point(e.x, e.y);
 				TreeItem item = wSamplesTree.getItem(click);
 				if (item != null) {
@@ -1408,14 +1442,13 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 			}
 
 		});
-		
+
 		addSamplesMenu();
-		
 
 	}
 
-	private void addSamplesMenu(){
-		
+	private void addSamplesMenu() {
+
 		sampleMenu = new Menu(shell, SWT.POP_UP);
 
 		showSampleItem = new MenuItem(sampleMenu, SWT.PUSH);
@@ -1423,7 +1456,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 		//showSampleItem.setImage(libScriptImage);
 		showSampleItem.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
-				for(TreeItem item : wSamplesTree.getSelection()){
+				for (TreeItem item : wSamplesTree.getSelection()) {
 					openSample(item);
 				}
 			}
@@ -1431,28 +1464,27 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		// menu is about to show, let's enable/disable stuff
 		sampleMenu.addListener(SWT.Show, new Listener() {
-			
+
 			@Override
 			public void handleEvent(Event e) {
 				showSampleItem.setEnabled(false);
 				// any non-folder selection enables the show sample 
-				for(TreeItem item : wSamplesTree.getSelection()){
-					switch((SampleType)item.getData("type")){
+				for (TreeItem item : wSamplesTree.getSelection()) {
+					switch ((SampleType) item.getData("type")) {
 					case TRANS:
 					case SCRIPT:
 					case WEB:
 						showSampleItem.setEnabled(true);
 						return;
 					}
-				} 
+				}
 			}
 		});
-		
+
 		wSamplesTree.setMenu(sampleMenu);
-		
-		
+
 	}
-	
+
 	private void openSample(TreeItem item) {
 
 		File f = (File) item.getData("file");
@@ -1478,26 +1510,31 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 				}
 				break;
 			case TRANS:
-				try {
-					// make a copy of the file in tmp dir and open it (prevents the original from be modified accidentally)
-					File tmpFile = new File(System.getProperty("java.io.tmpdir") + Const.FILE_SEPARATOR + f.getName());
-					FileUtils.copyFile(f, tmpFile);
-					Spoon.getInstance().openFile(tmpFile.toString(), false);
+				// load the file, but make it forget where it came from (prevents the original from be modified accidentally)
+				// File tmpFile = new File(System.getProperty("java.io.tmpdir") + Const.FILE_SEPARATOR + f.getName());
+				// FileUtils.copyFile(f, tmpFile);
+				// Spoon.getInstance().openFile(tmpFile.toString(), false);
+				Spoon.getInstance().openFile(f.toString(), false);
 
-					if (changedInDialog) {
-						MessageBox messageBox = new MessageBox(shell, SWT.ICON_QUESTION | SWT.NO | SWT.YES);
-						messageBox.setText(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Title"));
-						messageBox.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Message"));
-						if (messageBox.open() == SWT.YES) {
-							ok();
-						}
-					} else {
-						cancel();
+				// assuming that the new one is the last one... a shame openFile does not return the opened TransMeta
+				TransMeta[] transForms = Spoon.getInstance().getLoadedTransformations();
+				TransMeta newOne = transForms[transForms.length - 1];
+
+				// make it a prestine transformation
+				newOne.setFilename(null);
+				newOne.setChanged();
+
+				if (changedInDialog) {
+					MessageBox messageBox = new MessageBox(shell, SWT.ICON_QUESTION | SWT.NO | SWT.YES);
+					messageBox.setText(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Title"));
+					messageBox.setMessage(BaseMessages.getString(PKG, "RubyStepDialog.OpenedSample.Message"));
+					if (messageBox.open() == SWT.YES) {
+						ok();
 					}
-
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				} else {
+					cancel();
 				}
+
 				break;
 			case WEB:
 				try {

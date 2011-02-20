@@ -1,6 +1,12 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
+
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.plugins.PluginRegistry;
+import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
@@ -51,6 +57,23 @@ public class RubyStep extends BaseStep implements StepInterface {
 		}
 		
 		super.dispose(smi, sdi);
+	}
+
+	// convenience method to find this plugin's directory
+	public String getPluginDir(){
+		
+		URL pluginBaseURL = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory();
+		
+		File pluginBaseFile;
+		
+		try {
+			pluginBaseFile = new File(pluginBaseURL.toURI());
+		} catch (URISyntaxException e) {
+			pluginBaseFile = new File(pluginBaseURL.getPath());
+		}
+		
+		return pluginBaseFile.getAbsolutePath();
+		
 	}
 
 

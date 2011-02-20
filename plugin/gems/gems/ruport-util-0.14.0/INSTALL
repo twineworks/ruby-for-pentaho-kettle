@@ -1,0 +1,43 @@
+== What is it?
+
+ruport-util provides a home for marooned former parts of Ruby Reports,
+and newer fringe ideas.
+
+Support as of 2007.08.28:
+
+  * Basic Graphing (util/graph)
+  * Report runner  (util/report)
+  * Report Mailing (util/mailer)
+  * Report Manager (util/report_manager)
+  * Invoices       (util/invoice)
+  * PDF form helpers (util/pdf/form)
+  * ODS formatter for tables (util/ods) 
+  * Benchmarking Tool (util/bench)
+  * Ruport centric code generation via the rope command.
+  * csv to OpenDocument conversion via csv2ods
+
+See example/ for more information
+
+== Getting Ruport
+
+To use ruport-util >= 0.8.0, you'll need Ruport >= 1.2.0
+
+  sudo gem install ruport -y
+
+== Installing ruport-util
+
+It's on RubyForge:
+
+  gem install ruport-util -y
+
+== Using
+  
+  require "ruport"
+  require "ruport/util"
+
+  # then just use whatever tools you want.
+
+== Help?
+   
+Please report any problems on the Ruport mailing list:
+http://list.rubyreports.org
