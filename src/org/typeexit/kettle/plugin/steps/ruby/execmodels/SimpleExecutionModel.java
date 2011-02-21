@@ -19,8 +19,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.plugins.PluginRegistry;
-import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -115,7 +113,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 		
 		// if that fails, use the standard one
 		if (Const.isEmpty(gemHomeString)){
-			gemHomeString = PluginRegistry.getInstance().findPluginWithId(StepPluginType.class, "TypeExitRubyStep").getPluginDirectory().toString() + Const.FILE_SEPARATOR + "gems";		
+			gemHomeString = step.getPluginDir() + Const.FILE_SEPARATOR + "gems";		
 		}
 		
 		if (!Const.isEmpty(gemHomeString)){
