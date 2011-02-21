@@ -15,7 +15,7 @@ If you compile from source you'll have to edit build.properties and make the ket
 ## How do I write ruby scripts in Kettle?
 The Ruby scripting step comes with a lot of samples. Access them by opening a Ruby step dialog and exploring the samples section on the left.
 
-![Samples](plugin/images/samlpes.png)
+![Samples](https://github.com/type-exit/Ruby-Scripting-for-Kettle/blob/master/plugin/images/samples.png?raw=true)
 
 ## Can I use Ruby Gems?
 Absolutely, as long as [jruby](https://github.com/jruby) likes the gem (i.e. it has no unsupported native bindings) you may use gems as with any other ruby program. There scripting step comes with samples demonstrating the use and installation of Ruby Gems.
