@@ -73,7 +73,7 @@
     <server/>
     <type>H2</type>
     <access>Native</access>
-    <database>mem:MyDatabase;DB_CLOSE_DELAY=-1</database>
+    <database>mem:MyDatabase;DB_CLOSE_DELAY=-1;MULTI_THREADED=0</database>
     <port>8082</port>
     <username>H2</username>
     <password>Encrypted </password>
@@ -192,6 +192,7 @@ while result.next do
 end
 
 # close the db connection
+result.close
 conn.close
 </body>
 			<role>ROW_SCRIPT</role>
@@ -222,24 +223,6 @@ conn.close
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>176</xloc>
-      <yloc>154</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>output critters</name>
-    <type>Dummy</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>422</xloc>
       <yloc>154</yloc>
       <draw>Y</draw>
       </GUI>
@@ -348,24 +331,6 @@ end</body>
     </step>
 
   <step>
-    <name>output function info</name>
-    <type>Dummy</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>423</xloc>
-      <yloc>267</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
     <name>Read supported data types from in-memory H2 DB</name>
     <type>TypeExitRubyStep</type>
     <description/>
@@ -416,6 +381,7 @@ while rs.next do
 end
 
 # close the db connection
+rs.close
 conn.close
 </body>
 			<role>ROW_SCRIPT</role>
@@ -524,6 +490,24 @@ end</body>
     </step>
 
   <step>
+    <name>output critters</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>422</xloc>
+      <yloc>154</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
     <name>output datatype info</name>
     <type>Dummy</type>
     <description/>
@@ -537,6 +521,24 @@ end</body>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>429</xloc>
       <yloc>365</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>output function info</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>423</xloc>
+      <yloc>267</yloc>
       <draw>Y</draw>
       </GUI>
     </step>

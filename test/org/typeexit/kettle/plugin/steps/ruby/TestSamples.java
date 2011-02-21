@@ -11,7 +11,7 @@ import org.pentaho.di.job.JobMeta;
 
 //
 // NOTE: this is a blackbox test that works on distribution files
-// It should only be run run after "ant testdist" has put a test distribution into place
+// It should only be run run after "ant test-dist" has put a test distribution into place
 //
 public class TestSamples extends TestCase {
 	

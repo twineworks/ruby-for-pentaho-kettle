@@ -27,7 +27,7 @@
 	<property name="package" location="package" />
 	<property name="pluginname" value="Ruby" />
 	<property name="jarfilename" value="ruby-step.jar" />
-	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.0.zip" />
+	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.zip" />
 
 	<!-- used for running the tests -->
 	<path id="test.classpath">
@@ -155,17 +155,11 @@
 		<delete dir="${package}" />
 		<mkdir dir="${package}" />
 		<mkdir dir="${package}/Sources" />
-		<mkdir dir="${package}/Samples" />
 		<mkdir dir="${package}/${pluginname}" />
 
 		<!-- copy plugin -->
 		<copy todir="${package}/${pluginname}">
 			<fileset dir="${dist}" includes="**/*.*" />
-		</copy>
-
-		<!-- copy samples -->
-		<copy todir="${package}/Samples">
-			<fileset dir="samples" includes="**/*.*" />
 		</copy>
 
 		<!-- prepare sources -->
@@ -179,8 +173,9 @@
 		<copy todir="${package}/Sources/lib">
 			<fileset dir="lib" includes="**/*.*" />
 		</copy>
-		<copy todir="${package}/Sources/build">
-			<fileset dir="build" includes="**/build.xml" />
+		<copy todir="${package}/Sources">
+			<fileset dir="." includes="build.xml" />
+			<fileset dir="." includes="build.properties" />
 		</copy>
 
 		<!-- zip up the contents -->
@@ -188,9 +183,8 @@
 		<zip destfile="${package}/${zipfilename}">
 			<zipfileset dir="${package}/${pluginname}" prefix="${pluginname}" />
 			<zipfileset dir="${package}/Sources" prefix="Sources" />
-			<zipfileset dir="${package}/Samples" prefix="Samples" />
-			<zipfileset dir="build" includes="INSTALLATION.txt" />
-			<zipfileset dir="build" includes="LICENSE.txt" />
+			<zipfileset dir="." includes="INSTALLATION.txt" />
+			<zipfileset dir="." includes="LICENSE.txt" />
 		</zip>
 
 	</target>
@@ -206,14 +200,14 @@
 	<target name="test-compile" depends="init" description="compile the test sources">
 		<mkdir dir="${testclasses}" />
 		<javac target="1.6" srcdir="${testsrc}" destdir="${testclasses}" debuglevel="lines,vars,source" debug="true">
-			<classpath refid="compile.classpath" />
+			<classpath refid="test.classpath" />
 		</javac>
 	</target>
 
 
 	<target name="test" depends="test-compile,test-dist">
 		<junit fork="yes" haltonfailure="yes" maxmemory="256m">
-			<test name="org.typeexit.kettle.plugin.steps.ruby.TestSamples" />
+			<test name="org.typeexit.kettle.plugin.steps.ruby.TestSuite" />
 			<formatter type="plain" usefile="false" />
 			<classpath refid="test.classpath" />
 		</junit>

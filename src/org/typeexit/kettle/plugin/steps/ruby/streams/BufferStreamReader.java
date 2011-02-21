@@ -14,16 +14,12 @@ import org.typeexit.kettle.plugin.steps.ruby.execmodels.SimpleExecutionModel;
 
 public class BufferStreamReader {
 	
-//	private BaseStep step;
-//	private SimpleExecutionModel model;
 	private RubyStepData data;
 	private RubyArray buffer;
 	private long readPointer;
 	
 	public BufferStreamReader(SimpleExecutionModel model, RubyArray buffer) throws KettleStepException{
 		
-//		this.model = model;
-//		this.step = model.getStep();
 		this.data = model.getData();
 		
 		this.buffer = buffer;
