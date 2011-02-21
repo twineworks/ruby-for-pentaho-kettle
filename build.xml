@@ -8,82 +8,141 @@
 	<property file="build.properties" />
 
 	<!-- change these to adapt to your environment -->
-	<property name="kettle-dir" location="your_kettle_4.x.x_dir_here"/>
-	<property name="swt-jar" location="${kettle-dir}/libswt/osx64/swt.jar"/>
+	<property name="kettle-dir" location="your_kettle_4.x.x_dir_here" />
+	<property name="swt-jar" location="${kettle-dir}/libswt/osx64/swt.jar" />
 
-	<available file="${swt-jar}" property="swt-jar.present"/>
-	<available file="${kettle-dir}" type="dir" property="kettle-dir.present"/>
+	<available file="${swt-jar}" property="swt-jar.present" />
+	<available file="${kettle-dir}" type="dir" property="kettle-dir.present" />
 
-	<fail unless="kettle-dir.present" message="please specify the path to your kettle 4.x.x installation"/>
-	<fail unless="swt-jar.present" message="please specify a valid jar for the swt-jar property"/>
+	<fail unless="kettle-dir.present" message="please specify the path to your kettle 4.x.x installation" />
+	<fail unless="swt-jar.present" message="please specify a valid jar for the swt-jar property" />
 
 	<!-- set global properties for this build -->
-	<property name="src" location="src"/>
-	<property name="classes" location="classes"/>
-	<property name="dist" location="dist"/>
-	<property name="package" location="package"/>
-	<property name="pluginname" value="Ruby"/>
-	<property name="jarfilename" value="ruby-step.jar"/>
-	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.0.zip"/>
+	<property name="src" location="src" />
+	<property name="classes" location="classes" />
+	<property name="dist" location="dist" />
+	<property name="testsrc" location="test" />
+	<property name="testclasses" location="testclasses" />
+	<property name="testdist" location="testdist" />
+	<property name="package" location="package" />
+	<property name="pluginname" value="Ruby" />
+	<property name="jarfilename" value="ruby-step.jar" />
+	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.0.zip" />
+
+	<!-- used for running the tests -->
+	<path id="test.classpath">
+		<!-- the test cases -->
+		<pathelement location="${testclasses}" />
+
+		<!-- the plugin jar -->
+		<pathelement location="${testdist}/steps/${pluginname}/${jarfilename}" />
+
+		<!-- jruby -->
+		<fileset dir="${testdist}/steps/${pluginname}/lib">
+			<include name="**/*.jar" />
+		</fileset>
+
+		<!-- kettle libs (including jUnit) -->
+		<fileset dir="${kettle-dir}/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libext">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libext/pentaho">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libswt">
+			<include name="**/*.jar" />
+		</fileset>
+
+	</path>
+
+	<!-- used to compile code and tests -->
+	<path id="compile.classpath">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libext">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libext/pentaho">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${kettle-dir}/libswt">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset file="${swt-jar}" />
+
+	</path>
 
 	<target name="init">
-		<tstamp/>
+		<tstamp />
 	</target>
 
 	<target name="compile" depends="init" description="compile the source ">
-		<mkdir dir="${classes}"/>
+		<mkdir dir="${classes}" />
 		<javac target="1.6" srcdir="${src}" destdir="${classes}" debuglevel="lines,vars,source" debug="true">
-			<classpath>
-				<fileset dir="lib">
-					<include name="**/*.jar"/>
-				</fileset>
-				<fileset dir="${kettle-dir}/lib">
-					<include name="**/*.jar"/>
-				</fileset>
-				<fileset dir="${kettle-dir}/libext">
-					<include name="**/*.jar"/>
-				</fileset>
-				<fileset dir="${kettle-dir}/libext/pentaho">
-					<include name="**/*.jar"/>
-				</fileset>
-				<fileset dir="${kettle-dir}/libswt">
-					<include name="**/*.jar"/>
-				</fileset>
-				<fileset file="${swt-jar}"/>
+			<classpath refid="compile.classpath" />
 
-			</classpath>
 		</javac>
 	</target>
 
 	<target name="dist" depends="compile" description="generate the distribution">
 
-		<mkdir dir="${dist}"/>
+		<mkdir dir="${dist}" />
 
 		<!-- jar things up, also add the properties files (messages) -->
 		<copy todir="${classes}">
-			<fileset dir="${src}" includes="**/*.properties"/>
+			<fileset dir="${src}" includes="**/*.properties" />
 		</copy>
-		<jar jarfile="${dist}/${jarfilename}" basedir="${classes}"/>
+		<jar jarfile="${dist}/${jarfilename}" basedir="${classes}" />
 
 		<!-- Put the plugin.xml and icon into dist folder -->
 		<copy todir="${dist}">
-			<fileset dir="plugin" includes="**/*.*"/>
-			<fileset dir="plugin" includes="**"/>
+			<fileset dir="plugin" includes="**/*.*" />
+			<fileset dir="plugin" includes="**" />
 		</copy>
 		<!-- put the deps into lib subfolder -->
 		<mkdir dir="${dist}/lib" />
 		<copy todir="${dist}/lib">
-			<fileset dir="lib" includes="*.jar"/>
+			<fileset dir="lib" includes="*.jar" />
+		</copy>
+
+	</target>
+
+	<target name="test-dist" depends="compile" description="generate the test distribution">
+
+		<mkdir dir="${testdist}/steps/${pluginname}" />
+
+		<!-- jar things up, also add the properties files (messages) -->
+		<copy todir="${classes}">
+			<fileset dir="${src}" includes="**/*.properties" />
+		</copy>
+		<jar jarfile="${testdist}/steps/${pluginname}/${jarfilename}" basedir="${classes}" />
+
+		<!-- Put the plugin.xml and icon into dist folder -->
+		<copy todir="${testdist}/steps/${pluginname}">
+			<fileset dir="plugin" includes="**/*.*" />
+			<fileset dir="plugin" includes="**" />
+		</copy>
+		<!-- put the deps into lib subfolder -->
+		<mkdir dir="${testdist}/steps/${pluginname}/lib" />
+		<copy todir="${testdist}/steps/${pluginname}/lib">
+			<fileset dir="lib" includes="*.jar" />
 		</copy>
 
 	</target>
 
 	<target name="install" depends="dist" description="install into local kettle">
 		<!-- remove previous installations -->
-		<delete dir="${kettle-dir}/plugins/steps/${pluginname}"/>
+		<delete dir="${kettle-dir}/plugins/steps/${pluginname}" />
 
 		<!-- put fresh stuff in place -->
-		<mkdir dir="${kettle-dir}/plugins/steps/${pluginname}"/>
+		<mkdir dir="${kettle-dir}/plugins/steps/${pluginname}" />
 
 		<copy todir="${kettle-dir}/plugins/steps/${pluginname}">
 			<fileset dir="${dist}" includes="**/*.*" />
@@ -93,15 +152,15 @@
 
 	<target name="package" depends="dist" description="package for distribution">
 		<!-- clear previous installations -->
-		<delete dir="${package}"/>
-		<mkdir dir="${package}"/>
-		<mkdir dir="${package}/Sources"/>
-		<mkdir dir="${package}/Samples"/>
-		<mkdir dir="${package}/${pluginname}"/>
+		<delete dir="${package}" />
+		<mkdir dir="${package}" />
+		<mkdir dir="${package}/Sources" />
+		<mkdir dir="${package}/Samples" />
+		<mkdir dir="${package}/${pluginname}" />
 
 		<!-- copy plugin -->
 		<copy todir="${package}/${pluginname}">
-			<fileset dir="${dist}" includes="**/*.*"/>
+			<fileset dir="${dist}" includes="**/*.*" />
 		</copy>
 
 		<!-- copy samples -->
@@ -111,36 +170,54 @@
 
 		<!-- prepare sources -->
 		<copy todir="${package}/Sources/plugin">
-			<fileset dir="plugin" includes="**/*.*"/>
+			<fileset dir="plugin" includes="**/*.*" />
 		</copy>
 		<copy todir="${package}/Sources/src">
-			<fileset dir="src" includes="**/*.java"/>
-			<fileset dir="src" includes="**/*.properties"/>
+			<fileset dir="src" includes="**/*.java" />
+			<fileset dir="src" includes="**/*.properties" />
 		</copy>
 		<copy todir="${package}/Sources/lib">
-			<fileset dir="lib" includes="**/*.*"/>
+			<fileset dir="lib" includes="**/*.*" />
 		</copy>
 		<copy todir="${package}/Sources/build">
-			<fileset dir="build" includes="**/build.xml"/>
+			<fileset dir="build" includes="**/build.xml" />
 		</copy>
 
 		<!-- zip up the contents -->
-		<delete file="${package}/${zipfilename}"/>
+		<delete file="${package}/${zipfilename}" />
 		<zip destfile="${package}/${zipfilename}">
-			<zipfileset dir="${package}/${pluginname}" prefix="${pluginname}"/>
-			<zipfileset dir="${package}/Sources" prefix="Sources"/>
-			<zipfileset dir="${package}/Samples" prefix="Samples"/>
-			<zipfileset dir="build" includes="INSTALLATION.txt"/>
-			<zipfileset dir="build" includes="LICENSE.txt"/>
+			<zipfileset dir="${package}/${pluginname}" prefix="${pluginname}" />
+			<zipfileset dir="${package}/Sources" prefix="Sources" />
+			<zipfileset dir="${package}/Samples" prefix="Samples" />
+			<zipfileset dir="build" includes="INSTALLATION.txt" />
+			<zipfileset dir="build" includes="LICENSE.txt" />
 		</zip>
 
 	</target>
 
 	<target name="clean" description="clean up">
 		<!-- Delete the ${classes} and ${dist} directory trees -->
-		<delete dir="${classes}"/>
-		<delete dir="${dist}"/>
-		<delete dir="${package}"/>
+		<delete dir="${classes}" />
+		<delete dir="${dist}" />
+		<delete dir="${testdist}" />
+		<delete dir="${package}" />
 	</target>
+
+	<target name="test-compile" depends="init" description="compile the test sources">
+		<mkdir dir="${testclasses}" />
+		<javac target="1.6" srcdir="${testsrc}" destdir="${testclasses}" debuglevel="lines,vars,source" debug="true">
+			<classpath refid="compile.classpath" />
+		</javac>
+	</target>
+
+
+	<target name="test" depends="test-compile,test-dist">
+		<junit fork="yes" haltonfailure="yes" maxmemory="256m">
+			<test name="org.typeexit.kettle.plugin.steps.ruby.TestSamples" />
+			<formatter type="plain" usefile="false" />
+			<classpath refid="test.classpath" />
+		</junit>
+	</target>
+
 
 </project>
