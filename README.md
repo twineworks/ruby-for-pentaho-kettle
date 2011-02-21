@@ -51,6 +51,11 @@ To run the test suite:
 To create a distribution package:
 
 	ant package
+	
+To install into the Kettle folder:
+
+	ant install
+	
 
 ## Can I setup the project in Eclipse?
 Sure, just import the project into Eclipse after checking out. You need to adjust the build path to refer to the Kettle jars of your Kettle 4.x installation.
