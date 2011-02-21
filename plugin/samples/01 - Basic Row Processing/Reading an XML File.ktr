@@ -110,7 +110,7 @@
 # Created by Slawomir Chodnicki 
 # http:&#47;&#47;type-exit.org
 ################################################################################
-# This script uses standard XML libs of ruby to read an XML file 
+# This script uses the Ruby standard XML library REXML to read an XML file. 
 # The file is reporting the well-being of a computer system using a few metrics.
 # Please note that each measurement is split across multiple metric tags, 
 # which makes the file a bit tedious to work with, since there is no single
