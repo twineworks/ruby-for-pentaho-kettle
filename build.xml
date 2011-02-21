@@ -113,6 +113,13 @@
 		</copy>
 
 	</target>
+	
+	<target name="test-compile" depends="test-dist" description="compile the test sources">
+		<mkdir dir="${testclasses}" />
+		<javac target="1.6" srcdir="${testsrc}" destdir="${testclasses}" debuglevel="lines,vars,source" debug="true">
+			<classpath refid="test.classpath" />
+		</javac>
+	</target>	
 
 	<target name="test-dist" depends="compile" description="generate the test distribution">
 
@@ -170,6 +177,9 @@
 			<fileset dir="src" includes="**/*.java" />
 			<fileset dir="src" includes="**/*.properties" />
 		</copy>
+		<copy todir="${package}/Sources/test">
+			<fileset dir="test" includes="**/*.*" />
+		</copy>
 		<copy todir="${package}/Sources/lib">
 			<fileset dir="lib" includes="**/*.*" />
 		</copy>
@@ -192,20 +202,13 @@
 	<target name="clean" description="clean up">
 		<!-- Delete the ${classes} and ${dist} directory trees -->
 		<delete dir="${classes}" />
+		<delete dir="${testclasses}" />
 		<delete dir="${dist}" />
 		<delete dir="${testdist}" />
 		<delete dir="${package}" />
 	</target>
 
-	<target name="test-compile" depends="init" description="compile the test sources">
-		<mkdir dir="${testclasses}" />
-		<javac target="1.6" srcdir="${testsrc}" destdir="${testclasses}" debuglevel="lines,vars,source" debug="true">
-			<classpath refid="test.classpath" />
-		</javac>
-	</target>
-
-
-	<target name="test" depends="test-compile,test-dist">
+	<target name="test" depends="test-dist,test-compile">
 		<junit fork="yes" haltonfailure="yes" maxmemory="256m">
 			<test name="org.typeexit.kettle.plugin.steps.ruby.TestSuite" />
 			<formatter type="plain" usefile="false" />
