@@ -1,52 +1,38 @@
-# Ruby-Scripting-for-Kettle brings Ruby scripting to the [PDI](http://kettle.pentaho.com) ETL tool, a.k.a. Kettle.
+# Ruby-Scripting-for-Kettle brings Ruby scripting to the [PDI](http://kettle.pentaho.com) ETL tool which is also known as Kettle.
 
-It provides a scripting transformation step similar to the JavaScript and User Defined Java Class steps. It is very simple to use, while also allowing complete access to every aspect of a Kettle transformation.  
-
-The step is a work in progress, but it's reasonably stable now. Feel free to take a peek while I am working on the RC1. There are some very basic samples available from the samples tab in the plugin window. If you'd like a peek preview, here's how to install it:
+This project provides a scripting step similar to the JavaScript and User Defined Java Class steps. It aims to make the elegance of the Ruby language available to Kettle users. The implementation is based on [jruby](https://github.com/jruby), which also enables easy Java scripting in Kettle. 
 
 ## How to get it
-Use the download button or checkout the source using the git url :)
+Download any tagged version using the downlaod button or check out the source and compile it yourself.
 
-## Installation
-edit the build.properties file and edit kettle-dir to point to a Kettle 4.1 installation. The plugin will compile against Kettle libs from this installation. 
+## How to install?
+If you download a tagged version, the archive file will contain a "Ruby" folder. Copy it to <kettle-dir>/plugins/steps and restart Spoon. The "Ruby Scripting" step will appear in the "Scripting" section of a transformation.
 
-Execute the ant install target by typing: 
-ant install
+If you compile from source you'll have to edit build.properties and make the kettle-dir property point to a Kettle 4.x folder. This folder will be used to resolve compile time dependencies and for installation. Invoke the install ant target to compile and install the plugin by typing 
 
-This will compile the plugin and copy it to plugins/steps/Ruby
+	ant install
 
-Launch Spoon and find the ruby step in the "Scripting" section :)
+## How do I write ruby scripts in Kettle?
+The Ruby scripting step comes with a lot of samples. Access them by opening a Ruby step dialog and exploring the samples section on the left.
 
-## Features:
+![Samples](plugin/images/samlpes.png)
 
-Rows are represented as a hashes, indexed by field name
+## Can I use Ruby Gems?
+Absolutely, as long as [jruby](https://github.com/jruby) likes the gem (i.e. it has no unsupported native bindings) you may use gems as with any other ruby program. There scripting step comes with samples demonstrating the use and installation of Ruby Gems.
 
-Automatic conversion between all Kettle data types and native Ruby types
-
-	Kettle Integer <-> Ruby Fixnum
-	Kettle Number <-> Ruby Number
-	Kettle BigNumber <-> Ruby BigDecimal
-	Kettle Date <-> Ruby Time
-	Kettle Binary <-> Ruby Array of Fixnum (Bytes)
-	Kettle Serializable <-> Ruby Object 
-
-Scripts provide the rows they generate as simple hashes 
-
-Scripts may return nil to ignore rows and not produce any output
-
-Scripts have access to rows from info steps
-
-Scripts have access to rows from target steps
-
-A script tab may be declared a **start script**, which executes only once before the first row arrives 
-
-A script tab may be declared an **end script**, which executes only after all incoming rows have been processed 
-
-A script tab may be declared a **lib script**, which is not executed at all unless it is imported by any other script
-
-The step can be used as a row generator 
-
-Internal step ($step) and transformation ($trans) Kettle objects are available in ruby scope for advanced scripting
+## Features at a glance
+ - rows are represented as a hashes, indexed by field name
+ - automatic conversion between all Kettle data types and native Ruby types
+ - scripts have access to rows from info steps
+ - scripts can send rows selectively to target steps
+ - scripts may redirect rows to an error stream by using Kettles error handling feature
+ - a script tab may be declared a **start script**, which executes only once before the first row arrives, useful for init tasks 
+ - a script tab may be declared an **end script**, which executes only after all incoming rows have been processed, useful for cleanup and summary tasks 
+ - a script tab may be declared a **lib script**, which can be imported by any other script tab when required
+ - step with no input can be used as a row generators 
+ - Kettle step ($step) and transformation ($trans) objects are available in ruby scope for advanced scripting
+ - you may call your favorite java libraries from the ruby script
+ - you may use ruby gems in Kettle transformations
 
 
 
