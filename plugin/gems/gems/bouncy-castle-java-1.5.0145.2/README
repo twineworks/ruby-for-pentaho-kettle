@@ -1,0 +1,5 @@
+'bouncy-castle-java' is a gem redistribution of "Legion of the Bouncy Castle Java cryptography APIs" at http://www.bouncycastle.org/java.html
+
+Redistributed by Hiroshi Nakamura <nahi@ruby-lang.org>.
+
+This package is redistributed under the same terms of Bouncy Castle's license; see LICENSE.html for more details.
