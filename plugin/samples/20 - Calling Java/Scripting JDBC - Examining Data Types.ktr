@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>Scripting JDBC</name>
+    <name>Scripting JDBC - Examining Data Types</name>
     <description/>
     <extended_description/>
     <trans_version/>

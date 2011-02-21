@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>Reading an XML File with Nokogiri</name>
+    <name>Scripting JDBC - Reading Rows</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -62,38 +62,90 @@
     <clusterschemas>
     </clusterschemas>
   <created_user>-</created_user>
-  <created_date>2011&#47;02&#47;20 16:24:37.512</created_date>
+  <created_date>2011&#47;02&#47;13 21:45:25.023</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2011&#47;02&#47;20 16:24:37.512</modified_date>
+  <modified_date>2011&#47;02&#47;13 21:45:25.023</modified_date>
   </info>
   <notepads>
-    <notepad>
-      <note>This step reads the XML file at:
-&lt;kettle-dir&gt;&#47;plugins&#47;steps&#47;Ruby&#47;sample_files&#47;system_monitor.xml</note>
-      <xloc>76</xloc>
-      <yloc>54</yloc>
-      <width>390</width>
-      <heigth>48</heigth>
-      <fontname>Arial</fontname>
-      <fontsize>13</fontsize>
-      <fontbold>N</fontbold>
-      <fontitalic>N</fontitalic>
-      <fontcolorred>0</fontcolorred>
-      <fontcolorgreen>0</fontcolorgreen>
-      <fontcolorblue>0</fontcolorblue>
-      <backgroundcolorred>255</backgroundcolorred>
-      <backgroundcolorgreen>165</backgroundcolorgreen>
-      <backgroundcolorblue>0</backgroundcolorblue>
-      <bordercolorred>100</bordercolorred>
-      <bordercolorgreen>100</bordercolorgreen>
-      <bordercolorblue>100</bordercolorblue>
-      <drawshadow>Y</drawshadow>
-    </notepad>
   </notepads>
+  <connection>
+    <name>TestDB</name>
+    <server/>
+    <type>H2</type>
+    <access>Native</access>
+    <database>mem:MyDatabase;DB_CLOSE_DELAY=-1;MULTI_THREADED=0</database>
+    <port>8082</port>
+    <username>H2</username>
+    <password>Encrypted </password>
+    <servername/>
+    <data_tablespace/>
+    <index_tablespace/>
+    <attributes>
+      <attribute><code>FORCE_IDENTIFIERS_TO_LOWERCASE</code><attribute>N</attribute></attribute>
+      <attribute><code>FORCE_IDENTIFIERS_TO_UPPERCASE</code><attribute>N</attribute></attribute>
+      <attribute><code>IS_CLUSTERED</code><attribute>N</attribute></attribute>
+      <attribute><code>PORT_NUMBER</code><attribute>8082</attribute></attribute>
+      <attribute><code>QUOTE_ALL_FIELDS</code><attribute>N</attribute></attribute>
+      <attribute><code>SUPPORTS_BOOLEAN_DATA_TYPE</code><attribute>N</attribute></attribute>
+      <attribute><code>USE_POOLING</code><attribute>N</attribute></attribute>
+    </attributes>
+  </connection>
   <order>
-  <hop> <from>Read System Monitor XML File</from><to>output</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Read Critters from in-memory H2 DB</from><to>output critters</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Read System Monitor XML File</name>
+    <name>Put Critters Into in-memory H2 DB</name>
+    <type>ExecSQL</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <connection>TestDB</connection>
+    <execute_each_row>N</execute_each_row>
+    <single_statement>N</single_statement>
+    <replace_variables>N</replace_variables>
+    <sql>--
+-- Note:
+-- This step executes first, before the rest of the transformation starts. 
+-- It populates the H2 in-memory DB with some critters.
+
+DROP TABLE IF EXISTS critters;
+
+CREATE TABLE critters(
+	ID INT PRIMARY KEY,
+	CRITTER VARCHAR(100)
+);
+
+INSERT INTO critters VALUES (1,&apos;cat&apos;);
+INSERT INTO critters VALUES (2,&apos;dog&apos;);
+INSERT INTO critters VALUES (3, &apos;ant&apos;);
+INSERT INTO critters VALUES (4, &apos;badger&apos;);
+INSERT INTO critters VALUES (5, &apos;bee&apos;);
+INSERT INTO critters VALUES (6, &apos;camel&apos;);
+INSERT INTO critters VALUES (7, &apos;chicken&apos;);
+INSERT INTO critters VALUES (8, &apos;crow&apos;);
+INSERT INTO critters VALUES (9, &apos;deer&apos;);
+INSERT INTO critters VALUES (10, &apos;eagle&apos;);
+INSERT INTO critters VALUES (11, &apos;falcon&apos;);
+INSERT INTO critters VALUES (12, &apos;panda&apos;);</sql>
+    <insert_field/>
+    <update_field/>
+    <delete_field/>
+    <read_field/>
+    <arguments>
+    </arguments>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>178</xloc>
+      <yloc>56</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Read Critters from in-memory H2 DB</name>
     <type>TypeExitRubyStep</type>
     <description/>
     <distribute>Y</distribute>
@@ -105,89 +157,43 @@
 	<scripts>
 		<script>
 			<title>Ruby Script</title>
-			<body>################################################################################
+			<body>###############################################################################
 # Ruby Scripting Step for Kettle 
 # Created by Slawomir Chodnicki 
 # http:&#47;&#47;type-exit.org
 ################################################################################
-# This script uses the nokogiri gem to read an XML file (http:&#47;&#47;nokogiri.org&#47;).
-# The file is reporting the well-being of a computer system using a few metrics.
-# Please note that each measurement is split across multiple metric tags, 
-# which makes the file a bit tedious to work with, since there is no single
-# loop path that would iterate through all the data points.
+# This scripts creates a table &quot;critters&quot; that has been populated by the
+# Execute SQL step. 
 #
-# The structure of the file: 
+# All critters are read from the database and put to the row stream.
 #
-# &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;
-# &lt;data&gt;
-#   &lt;system&gt;test system&lt;&#47;system&gt;
-#   &lt;metric name=&quot;time&quot; type=&quot;timestamp&quot;&gt;
-#     &lt;value&gt;1292231700&lt;&#47;value&gt;
-#     &lt;value&gt;1292232000&lt;&#47;value&gt;
-#  	  ...
-#   &lt;&#47;metric&gt;
-#   &lt;metric name=&quot;active_cpu&quot; type=&quot;int&quot;&gt;
-#     &lt;value&gt;2&lt;&#47;value&gt;
-#     &lt;value&gt;2&lt;&#47;value&gt;
-#     ...
-#   &lt;&#47;metric&gt;
-#   &lt;metric name=&quot;cpu_util&quot; type=&quot;float&quot;&gt;
-#     &lt;value&gt;9.58&lt;&#47;value&gt;
-#     &lt;value&gt;0.43&lt;&#47;value&gt;
-#     ...
-#   &lt;&#47;metric&gt;
-#   &lt;metric name=&quot;mem_util&quot; type=&quot;float&quot;&gt;
-#     &lt;value&gt;26.58&lt;&#47;value&gt;
-#     &lt;value&gt;27.47&lt;&#47;value&gt;
-#  	 ...
-#   &lt;&#47;metric&gt;
-#   &lt;metric name=&quot;run_queue&quot; type=&quot;float&quot;&gt;
-#     &lt;value&gt;0&lt;&#47;value&gt;
-#     &lt;value&gt;0&lt;&#47;value&gt;
-# 	 ...
-#   &lt;&#47;metric&gt;
-#   &lt;metric name=&quot;swap_util&quot; type=&quot;float&quot;&gt;
-#     &lt;value&gt;23.9&lt;&#47;value&gt;
-#     &lt;value&gt;24.68&lt;&#47;value&gt;
-# 	 ...
-#    &lt;&#47;metric&gt;
-# &lt;&#47;data&gt;
+# This script fetches the connect URL from the Database definition and 
+# connects using JDBC
 ################################################################################
 
-require &apos;rubygems&apos;
-require &apos;nokogiri&apos;
+# initialize driver class, this is much like calling Class.forName(driver)
+Java::org.h2.Driver
 
-# The demo file is plugins&#47;steps&#47;Ruby&#47;sample_files&#47;system_monitor.xml
-xml_file = File.join($step.plugin_dir, &quot;sample_files&quot;, &quot;system_monitor.xml&quot;)
+# get the url from the database definition in the db connections dialog
+url = $trans.trans_meta.find_database(&quot;TestDB&quot;).url
 
-# put the xml file into the nakogiri parser
-doc = Nokogiri::XML(File.open xml_file, File::RDONLY)
+# get a connection
+conn = java.sql.DriverManager.get_connection(url, &quot;H2&quot;, &quot;&quot;)
 
-# find the nodes and convert them to appropriate types
-system_name = doc.at_xpath(&quot;&#47;data&#47;system&quot;).content
-times 		= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;time&apos;]&#47;value&quot;).map{|n| Time.at n.content.to_i}
-active_cpu 	= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;active_cpu&apos;]&#47;value&quot;).map{|n| n.content.to_i}
-cpu_util 	= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;cpu_util&apos;]&#47;value&quot;).map{|n| n.content.to_f}
-mem_util 	= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;mem_util&apos;]&#47;value&quot;).map{|n| n.content.to_f}
-run_queue 	= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;run_queue&apos;]&#47;value&quot;).map{|n| n.content.to_f}
-swap_util 	= doc.xpath(&quot;&#47;data&#47;metric[@name = &apos;swap_util&apos;]&#47;value&quot;).map{|n| n.content.to_f}
+# execute the select statement
+result = conn.create_statement.execute_query &apos;SELECT ID, CRITTER FROM critters ORDER BY CRITTER&apos;
 
-# generate the output rows 
-
-(0...swap_util.size).each do |i|
-	$output &lt;&lt; {
-		&quot;system_name&quot; 	=&gt; system_name,
-		&quot;times&quot; 		=&gt; times[i],
-		&quot;active_cpu&quot;	=&gt; active_cpu[i],
-		&quot;cpu_util&quot;		=&gt; cpu_util[i],
-		&quot;mem_util&quot;		=&gt; mem_util[i],
-		&quot;run_queue&quot;		=&gt; run_queue[i],
-		&quot;swap_util&quot;		=&gt; swap_util[i]
-	}
+# write result rows to the output stream
+while result.next do
+	$output &lt;&lt; {	
+		&quot;id&quot; 		=&gt; result.getLong(1),
+		&quot;critter&quot; 	=&gt; result.getString(2)
+	}	
 end
 
-# evaluate to nil, all rows have been written 
-nil
+# close the db connection
+result.close
+conn.close
 </body>
 			<role>ROW_SCRIPT</role>
 		</script>
@@ -197,38 +203,13 @@ nil
 
 	<outputFields>
 		<outputField>
-			<name>system_name</name>
-			<type>2</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>times</name>
-			<type>3</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>active_cpu</name>
+			<name>id</name>
 			<type>5</type>
 			<update>N</update>
 		</outputField>
 		<outputField>
-			<name>cpu_util</name>
-			<type>1</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>mem_util</name>
-			<type>1</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>run_queue</name>
-			<type>1</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>swap_util</name>
-			<type>1</type>
+			<name>critter</name>
+			<type>2</type>
 			<update>N</update>
 		</outputField>
 	</outputFields>
@@ -241,14 +222,14 @@ nil
 	<gemHome/>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>160</xloc>
-      <yloc>149</yloc>
+      <xloc>176</xloc>
+      <yloc>154</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
 
   <step>
-    <name>output</name>
+    <name>output critters</name>
     <type>Dummy</type>
     <description/>
     <distribute>Y</distribute>
@@ -259,8 +240,8 @@ nil
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>368</xloc>
-      <yloc>149</yloc>
+      <xloc>422</xloc>
+      <yloc>154</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
