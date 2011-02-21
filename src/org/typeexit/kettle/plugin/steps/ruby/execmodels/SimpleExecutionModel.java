@@ -2,6 +2,7 @@ package org.typeexit.kettle.plugin.steps.ruby.execmodels;
 
 import java.io.File;
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.LinkedList;
@@ -16,6 +17,7 @@ import org.jruby.RubyTime;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JRubyClassLoader;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
