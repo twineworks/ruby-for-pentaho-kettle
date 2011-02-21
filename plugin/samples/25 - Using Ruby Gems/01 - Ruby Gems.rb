@@ -44,4 +44,5 @@
 # java -Djruby.gem.home=gems -jar lib/jruby-complete.jar -S gem install twitter --remote
 #
 # See http://docs.rubygems.org/ for the full gem command reference
+# See http://ruby-toolbox.com/ for popular ruby gems
 ##########################################################################################
