@@ -56,21 +56,21 @@ public class SimpleExecutionModel implements ExecutionModel {
 	public boolean onInit() {
 
 		try {
-			
+
 			data.container = RubyStepFactory.createScriptingContainer(true, meta.getRubyVersion());
 
 			data.runtime = data.container.getProvider().getRuntime();
-			
+
 			// set gem home if specified
 			setGemHome();
-			
+
 			data.container.setScriptFilename(meta.getRowScript().getTitle());
 			data.rubyScriptObject = data.container.parse(meta.getRowScript().getScript(), 0);
-			
+
 			// put the usual stuff into global scope
 			data.container.put("$step", step);
 			data.container.put("$trans", step.getDispatcher());
-			
+
 			// put all variables into scope
 			for (RubyVariableMeta var : meta.getRubyVariables()) {
 				data.container.put(var.getName(), step.environmentSubstitute(var.getValue()));
@@ -79,15 +79,15 @@ public class SimpleExecutionModel implements ExecutionModel {
 			// put all script tabs into scope
 			RubyHash tabs = new RubyHash(data.runtime);
 
-			for(RubyScriptMeta tab : meta.getScripts()){
+			for (RubyScriptMeta tab : meta.getScripts()) {
 				tabs.put(tab.getTitle(), new ScriptTab(tab, data));
 			}
-			
+
 			data.container.put("$tabs", tabs);
 
 			// temporary place for the output a script might produce
 			data.rowList = new LinkedList<Object[]>();
-			
+
 			// add << aliases to the java stream writers
 			data.container.runScriptlet("JavaUtilities.extend_proxy('org.typeexit.kettle.plugin.steps.ruby.streams.StdStreamWriter') {alias << write}\n");
 			data.container.runScriptlet("JavaUtilities.extend_proxy('org.typeexit.kettle.plugin.steps.ruby.streams.ErrorStreamWriter') {alias << write}\n");
@@ -102,25 +102,25 @@ public class SimpleExecutionModel implements ExecutionModel {
 	}
 
 	private void setGemHome() {
-		
+
 		// if specified directly, take it
 		String gemHomeString = step.environmentSubstitute(meta.getGemHome());
 
 		// if not, fall back to RUBY_GEM_HOME
-		if (Const.isEmpty(gemHomeString) && !Const.isEmpty(step.getVariable("RUBY_GEM_HOME"))){
+		if (Const.isEmpty(gemHomeString) && !Const.isEmpty(step.getVariable("RUBY_GEM_HOME"))) {
 			gemHomeString = step.environmentSubstitute("${RUBY_GEM_HOME}");
 		}
-		
+
 		// if that fails, use the standard one
-		if (Const.isEmpty(gemHomeString)){
-			gemHomeString = step.getPluginDir() + Const.FILE_SEPARATOR + "gems";		
+		if (Const.isEmpty(gemHomeString)) {
+			gemHomeString = step.getPluginDir() + Const.FILE_SEPARATOR + "gems";
 		}
-		
-		if (!Const.isEmpty(gemHomeString)){
-			
+
+		if (!Const.isEmpty(gemHomeString)) {
+
 			File gemHomePath = new File(gemHomeString);
 			gemHomePath = gemHomePath.getAbsoluteFile();
-			
+
 			RubyHash configHash = (RubyHash) data.container.parse("require 'rbconfig'; RbConfig::CONFIG").run();
 			configHash.put("default_gem_home", gemHomePath.getAbsolutePath());
 		}
@@ -128,7 +128,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	@Override
 	public void onDispose() {
-		
+
 		data.marshal = null;
 		data.bigDecimal = null;
 
@@ -172,33 +172,33 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		data.cacheFieldNames(data.inputRowMeta);
 		data.cacheFieldNames(data.outputRowMeta);
-		
-		data.baseRowMeta = meta.isClearInputFields()?data.emptyRowMeta:data.inputRowMeta; 
-		
+
+		data.baseRowMeta = meta.isClearInputFields() ? data.emptyRowMeta : data.inputRowMeta;
+
 		// put the standard streams into ruby scope
 		data.container.put("$output", new StdStreamWriter(this));
 		data.container.put("$input", new StdStreamReader(this));
-		
-		if (meta.getParentStepMeta().isDoingErrorHandling()){
-			
+
+		if (meta.getParentStepMeta().isDoingErrorHandling()) {
+
 			data.errorRowMeta = meta.getParentStepMeta().getStepErrorMeta().getErrorFields().clone();
 			data.stepErrorMeta = meta.getParentStepMeta().getStepErrorMeta();
 			data.cacheFieldNames(data.errorRowMeta);
 
 			data.container.put("$error", new ErrorStreamWriter(this));
 		}
-		
+
 		// put the target steps into ruby scope
 		RubyHash targetSteps = new RubyHash(data.runtime);
 
-		int t=0;
+		int t = 0;
 		for (StreamInterface stream : meta.getStepIOMeta().getTargetStreams()) {
 			StepStreamWriter writer = new StepStreamWriter(this, stream.getStepname());
 			targetSteps.put(meta.getTargetSteps().get(t).getRoleName(), writer);
 			t++;
 		}
-		
-		data.container.put("$target_steps", targetSteps);			
+
+		data.container.put("$target_steps", targetSteps);
 
 	}
 
@@ -211,40 +211,45 @@ public class SimpleExecutionModel implements ExecutionModel {
 		for (int i = 0; i < fieldNames.length; i++) {
 
 			String field = fieldNames[i];
+			// null values don't need no special treatment, they'll become nil
+			if (r[i] == null) {
+				rubyRow.put(field, null);
+			} else {
 
-			switch (rowMeta.getValueMeta(i).getType()) {
-			case ValueMeta.TYPE_BOOLEAN:
-			case ValueMeta.TYPE_INTEGER:
-			case ValueMeta.TYPE_STRING:
-			case ValueMeta.TYPE_NUMBER:
-			case ValueMeta.TYPE_NONE:
-				rubyRow.put(field, r[i]);
-				break;
-			case ValueMeta.TYPE_SERIALIZABLE:
-				if (r[i] instanceof RubyStepMarshalledObject) {
-					Object restoredObject = getMarshal().callMethod(data.runtime.getCurrentContext(), "restore", data.runtime.newString(r[i].toString()));
-					rubyRow.put(field, restoredObject);
-				} else {
-					// try to put the object in there as it is.. should create a nice adapter for the java object
+				switch (rowMeta.getValueMeta(i).getType()) {
+				case ValueMeta.TYPE_BOOLEAN:
+				case ValueMeta.TYPE_INTEGER:
+				case ValueMeta.TYPE_STRING:
+				case ValueMeta.TYPE_NUMBER:
+				case ValueMeta.TYPE_NONE:
 					rubyRow.put(field, r[i]);
-				}
-				break;
-			case ValueMeta.TYPE_BINARY:
-				// put a ruby array with bytes in there, that is expensive and should probably be avoided
-				rubyRow.put(fieldNames[i],
+					break;
+				case ValueMeta.TYPE_SERIALIZABLE:
+					if (r[i] instanceof RubyStepMarshalledObject) {
+						Object restoredObject = getMarshal().callMethod(data.runtime.getCurrentContext(), "restore", data.runtime.newString(r[i].toString()));
+						rubyRow.put(field, restoredObject);
+					} else {
+						// try to put the object in there as it is.. should create a nice adapter for the java object
+						rubyRow.put(field, r[i]);
+					}
+					break;
+				case ValueMeta.TYPE_BINARY:
+					// put a ruby array with bytes in there, that is expensive and should probably be avoided
+					rubyRow.put(fieldNames[i],
 							data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) r[i])))
-						);
-				break;
+							);
+					break;
 
-			case ValueMeta.TYPE_BIGNUMBER:
-				IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(((BigDecimal) r[i]).toString()));
-				rubyRow.put(field, bigDecimalObject);
-				break;
+				case ValueMeta.TYPE_BIGNUMBER:
+					IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(((BigDecimal) r[i]).toString()));
+					rubyRow.put(field, bigDecimalObject);
+					break;
 
-			case ValueMeta.TYPE_DATE:
-				rubyRow.put(field, data.runtime.newTime(((Date) r[i]).getTime()));
-				break;
+				case ValueMeta.TYPE_DATE:
+					rubyRow.put(field, data.runtime.newTime(((Date) r[i]).getTime()));
+					break;
 
+				}
 			}
 
 		}
@@ -254,7 +259,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 	}
 
 	private void applyRubyHashToRow(Object[] r, RubyHash resultRow, List<ValueMetaInterface> forFields, RowMetaInterface forRow) throws KettleException {
-		
+
 		// set each field's value from the resultRow
 		for (ValueMetaInterface outField : forFields) {
 
@@ -262,9 +267,9 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 			// convert simple cases automatically
 			Object javaValue = null;
-			
+
 			// for nil values just put null into the row
-			if (rubyVal != null && !rubyVal.isNil()){
+			if (rubyVal != null && !rubyVal.isNil()) {
 
 				// TODO: provide a meaningful error message if conversion fails because the user put non-convertible results in there (like a string saying "true"/"false" for the bool type)
 				switch (outField.getType()) {
@@ -316,7 +321,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 					break;
 
 				}
-				
+
 			}
 
 			r[data.fieldIndexCache.get(forRow).get(outField.getName())] = javaValue;
@@ -334,10 +339,9 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// ruby hashes are processed instantly
 		if (rubyObject instanceof RubyHash) {
 			// clone the row only if necessary
-			if (rowList.size() > 0){
+			if (rowList.size() > 0) {
 				r = RowDataUtil.resizeArray(inRow.cloneRow(r), forRow.size());
-			}
-			else{
+			} else {
 				r = RowDataUtil.resizeArray(r, forRow.size());
 			}
 			applyRubyHashToRow(r, (RubyHash) rubyObject, forFields, forRow);
@@ -357,7 +361,6 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 		// at this point the returned object is not nil, not a hash and not an array, let's ignore the output but warn in the log
 		step.logBasic("WARNING: script returned non-hash value: " + rubyObject.toString() + " as a result ");
-		
 
 	}
 
@@ -373,10 +376,10 @@ public class SimpleExecutionModel implements ExecutionModel {
 		if (step.first) {
 			data.hasDirectInput = meta.hasDirectInput();
 			// call the init script here rather than in the init section. It guarantees that other steps are fully initialized.
-			if (meta.getInitScript() != null){
+			if (meta.getInitScript() != null) {
 				data.container.runScriptlet(new StringReader(meta.getInitScript().getScript()), meta.getInitScript().getTitle());
 			}
-			
+
 			// this must be done before the first call to getRow() in case there are info streams present
 			initInfoRowStreams();
 		}
@@ -416,10 +419,10 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 				// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
 				// write "summary" rows and the like 
-				if (meta.getDisposeScript() != null){
+				if (meta.getDisposeScript() != null) {
 					data.container.runScriptlet(meta.getDisposeScript().getScript());
-				}				
-				
+				}
+
 				// no more rows coming in
 				step.setOutputDone();
 				return false;
@@ -445,12 +448,12 @@ public class SimpleExecutionModel implements ExecutionModel {
 			for (Object[] outrow : data.rowList) {
 				step.putRow(data.outputRowMeta, outrow);
 			}
-			
+
 			// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
 			// write "summary" rows and the like 
-			if (meta.getDisposeScript() != null){
+			if (meta.getDisposeScript() != null) {
 				data.container.runScriptlet(meta.getDisposeScript().getScript());
-			}						
+			}
 
 			step.setOutputDone();
 			return false;
@@ -459,31 +462,29 @@ public class SimpleExecutionModel implements ExecutionModel {
 	}
 
 	private void initInfoRowStreams() throws KettleStepException {
-		
+
 		// put the info steps into ruby scope
 		RubyHash infoSteps = new RubyHash(data.runtime);
 
-		int i=0;
+		int i = 0;
 		for (StreamInterface stream : meta.getStepIOMeta().getInfoStreams()) {
-			
+
 			StepStreamReader reader = new StepStreamReader(this, stream.getStepname());
 
 			// if there's direct input connected as well as info streams present, the info streams *must* be prefetched as per 4.0 API
-			if (data.hasDirectInput){
+			if (data.hasDirectInput) {
 				RubyArray allRows = reader.readAll();
 				BufferStreamReader bReader = new BufferStreamReader(this, allRows);
 				infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), bReader);
+			} else {
+				infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), reader);
 			}
-			else{
-				infoSteps.put(meta.getInfoSteps().get(i).getRoleName(), reader);	
-			}
-			
+
 			i++;
 		}
-		
+
 		data.container.put("$info_steps", infoSteps);
-		
-		
+
 	}
 
 	public RubyStep getStep() {
