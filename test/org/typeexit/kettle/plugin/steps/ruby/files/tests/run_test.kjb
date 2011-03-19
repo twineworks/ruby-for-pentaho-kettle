@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <job>
-  <name>Run Sample</name>
+  <name>Run Test</name>
     <description/>
     <extended_description/>
     <job_version/>
@@ -60,7 +60,7 @@
       <yloc>134</yloc>
       </entry>
     <entry>
-      <name>Run Sample</name>
+      <name>Run Test</name>
       <description/>
       <type>TRANS</type>
       <specification_method>filename</specification_method>
@@ -88,8 +88,8 @@
       </parameters>      <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>328</xloc>
-      <yloc>137</yloc>
+      <xloc>360</xloc>
+      <yloc>134</yloc>
       </entry>
     <entry>
       <name>Success</name>
@@ -98,8 +98,8 @@
       <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>441</xloc>
-      <yloc>137</yloc>
+      <xloc>473</xloc>
+      <yloc>134</yloc>
       </entry>
     <entry>
       <name>Write To Log</name>
@@ -107,17 +107,17 @@
       <type>WRITE_TO_LOG</type>
       <logmessage>${filename}</logmessage>
       <loglevel>Minimal</loglevel>
-      <logsubject>Executing Sample:</logsubject>
+      <logsubject>Running Test:</logsubject>
       <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>213</xloc>
+      <xloc>243</xloc>
       <yloc>135</yloc>
       </entry>
   </entries>
   <hops>
     <hop>
-      <from>Run Sample</from>
+      <from>Run Test</from>
       <to>Success</to>
       <from_nr>0</from_nr>
       <to_nr>0</to_nr>
@@ -136,7 +136,7 @@
     </hop>
     <hop>
       <from>Write To Log</from>
-      <to>Run Sample</to>
+      <to>Run Test</to>
       <from_nr>0</from_nr>
       <to_nr>0</to_nr>
       <enabled>Y</enabled>

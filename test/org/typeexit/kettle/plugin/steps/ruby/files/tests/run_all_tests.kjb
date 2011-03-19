@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <job>
-  <name>Run Sample</name>
+  <name>Run All Tests</name>
     <description/>
     <extended_description/>
     <job_version/>
     <job_status>0</job_status>
   <directory>&#47;</directory>
   <created_user>-</created_user>
-  <created_date>2011&#47;02&#47;21 16:15:02.417</created_date>
+  <created_date>2011&#47;02&#47;21 15:42:55.917</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2011&#47;02&#47;21 16:15:02.417</modified_date>
+  <modified_date>2011&#47;02&#47;21 15:42:55.917</modified_date>
     <parameters>
-        <parameter>
-            <name>filename</name>
-            <default_value>none</default_value>
-            <description/>
-        </parameter>
     </parameters>
     <slaveservers>
     </slaveservers>
@@ -56,16 +51,16 @@
       <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>127</xloc>
-      <yloc>134</yloc>
+      <xloc>113</xloc>
+      <yloc>88</yloc>
       </entry>
     <entry>
-      <name>Run Sample</name>
+      <name>Find Test Files</name>
       <description/>
       <type>TRANS</type>
       <specification_method>filename</specification_method>
       <trans_object_id/>
-      <filename>${filename}</filename>
+      <filename>${Internal.Job.Filename.Directory}&#47;find_all_test_files.ktr</filename>
       <transname/>
       <arg_from_previous>N</arg_from_previous>
       <params_from_previous>N</params_from_previous>
@@ -88,8 +83,41 @@
       </parameters>      <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>328</xloc>
-      <yloc>137</yloc>
+      <xloc>267</xloc>
+      <yloc>89</yloc>
+      </entry>
+    <entry>
+      <name>Run Test</name>
+      <description/>
+      <type>JOB</type>
+      <specification_method>filename</specification_method>
+      <job_object_id/>
+      <filename>${Internal.Job.Filename.Directory}&#47;run_test.kjb</filename>
+      <jobname/>
+      <arg_from_previous>N</arg_from_previous>
+      <params_from_previous>Y</params_from_previous>
+      <exec_per_row>Y</exec_per_row>
+      <set_logfile>N</set_logfile>
+      <logfile/>
+      <logext/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <loglevel>Nothing</loglevel>
+      <slave_server_name/>
+      <wait_until_finished>Y</wait_until_finished>
+      <follow_abort_remote>N</follow_abort_remote>
+      <create_parent_folder>N</create_parent_folder>
+      <pass_export>N</pass_export>
+      <parameters>        <pass_all_parameters>Y</pass_all_parameters>
+            <parameter>            <name>filename</name>
+            <stream_name>filename</stream_name>
+            <value/>
+            </parameter>      </parameters>      <set_append_logfile>N</set_append_logfile>
+      <parallel>N</parallel>
+      <draw>Y</draw>
+      <nr>0</nr>
+      <xloc>417</xloc>
+      <yloc>89</yloc>
       </entry>
     <entry>
       <name>Success</name>
@@ -98,36 +126,14 @@
       <parallel>N</parallel>
       <draw>Y</draw>
       <nr>0</nr>
-      <xloc>441</xloc>
-      <yloc>137</yloc>
-      </entry>
-    <entry>
-      <name>Write To Log</name>
-      <description/>
-      <type>WRITE_TO_LOG</type>
-      <logmessage>${filename}</logmessage>
-      <loglevel>Minimal</loglevel>
-      <logsubject>Executing Sample:</logsubject>
-      <parallel>N</parallel>
-      <draw>Y</draw>
-      <nr>0</nr>
-      <xloc>213</xloc>
-      <yloc>135</yloc>
+      <xloc>548</xloc>
+      <yloc>90</yloc>
       </entry>
   </entries>
   <hops>
     <hop>
-      <from>Run Sample</from>
-      <to>Success</to>
-      <from_nr>0</from_nr>
-      <to_nr>0</to_nr>
-      <enabled>Y</enabled>
-      <evaluation>Y</evaluation>
-      <unconditional>N</unconditional>
-    </hop>
-    <hop>
       <from>START</from>
-      <to>Write To Log</to>
+      <to>Find Test Files</to>
       <from_nr>0</from_nr>
       <to_nr>0</to_nr>
       <enabled>Y</enabled>
@@ -135,8 +141,17 @@
       <unconditional>Y</unconditional>
     </hop>
     <hop>
-      <from>Write To Log</from>
-      <to>Run Sample</to>
+      <from>Find Test Files</from>
+      <to>Run Test</to>
+      <from_nr>0</from_nr>
+      <to_nr>0</to_nr>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
+    </hop>
+    <hop>
+      <from>Run Test</from>
+      <to>Success</to>
       <from_nr>0</from_nr>
       <to_nr>0</to_nr>
       <enabled>Y</enabled>
