@@ -3,6 +3,7 @@ package org.typeexit.kettle.plugin.steps.ruby.streams;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.RowSet;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.trans.step.BaseStep;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepData;
@@ -30,7 +31,7 @@ public class StepStreamReader {
 		 
 	}
 	 
-	public IRubyObject read(){
+	public IRubyObject read() throws KettleException{
 		
 		Object r[] = rs.getRow();
 
@@ -44,7 +45,7 @@ public class StepStreamReader {
 		return rubyRow;
 	}
 
-	public IRubyObject read(long upTo){
+	public IRubyObject read(long upTo) throws KettleException{
 		
 		// request to read <0 rows
 		if (upTo < 0) return data.runtime.getNil();
@@ -65,7 +66,7 @@ public class StepStreamReader {
 	
 	}
 	
-	public RubyArray readAll(){
+	public RubyArray readAll() throws KettleException{
 		
 		RubyArray arr = data.runtime.newArray();
 		

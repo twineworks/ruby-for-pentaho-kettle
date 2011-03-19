@@ -18,7 +18,6 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -202,7 +201,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	public RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) {
+	public RubyHash createRubyInputRow(RowMetaInterface rowMeta, Object[] r) throws KettleException {
 
 		// create a hash for the row, they are not reused on purpose, so the scripting user can safely use them to store entire rows between invocations
 		RubyHash rubyRow = new RubyHash(data.runtime);
@@ -216,11 +215,21 @@ public class SimpleExecutionModel implements ExecutionModel {
 				rubyRow.put(field, null);
 			} else {
 
-				switch (rowMeta.getValueMeta(i).getType()) {
+				ValueMetaInterface vm = rowMeta.getValueMeta(i);
+
+				switch (vm.getType()) {
 				case ValueMeta.TYPE_BOOLEAN:
+					rubyRow.put(field, vm.getBoolean(r[i]));
+					break;
 				case ValueMeta.TYPE_INTEGER:
+					rubyRow.put(field, vm.getInteger(r[i]));
+					break;
 				case ValueMeta.TYPE_STRING:
+					rubyRow.put(field, vm.getString(r[i]));
+					break;
 				case ValueMeta.TYPE_NUMBER:
+					rubyRow.put(field, vm.getNumber(r[i]));
+					break;
 				case ValueMeta.TYPE_NONE:
 					rubyRow.put(field, r[i]);
 					break;
@@ -236,20 +245,22 @@ public class SimpleExecutionModel implements ExecutionModel {
 				case ValueMeta.TYPE_BINARY:
 					// put a ruby array with bytes in there, that is expensive and should probably be avoided
 					rubyRow.put(fieldNames[i],
-							data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) r[i])))
-							);
+								data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) vm.getBinary(r[i]))))
+								);
+
 					break;
 
 				case ValueMeta.TYPE_BIGNUMBER:
-					IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(((BigDecimal) r[i]).toString()));
+					IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString((vm.getBigNumber(r[i])).toString()));
 					rubyRow.put(field, bigDecimalObject);
 					break;
 
 				case ValueMeta.TYPE_DATE:
-					rubyRow.put(field, data.runtime.newTime(((Date) r[i]).getTime()));
+					rubyRow.put(field, data.runtime.newTime((vm.getDate(r[i])).getTime()));
 					break;
 
 				}
+
 			}
 
 		}
@@ -461,7 +472,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
 	}
 
-	private void initInfoRowStreams() throws KettleStepException {
+	private void initInfoRowStreams() throws KettleException {
 
 		// put the info steps into ruby scope
 		RubyHash infoSteps = new RubyHash(data.runtime);
