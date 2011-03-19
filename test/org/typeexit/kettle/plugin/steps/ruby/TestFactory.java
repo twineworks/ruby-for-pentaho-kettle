@@ -15,8 +15,8 @@ public class TestFactory extends TestCase{
 	}
 	
 	public void testJDBCDrivers(){
-		// this is a regression test for JDBC drivers disappearing from the JVM, since jruby will
-		// remove them by default.
+		// this is a regression test for JDBC drivers disappearing from the JVM, since jruby may
+		// remove them 
 		// The factory is supposed to create a container that does not do that
 		
 		// this script will raise an exception if the org.h2.Driver got unregistered

@@ -18,7 +18,7 @@ public class TestSamples extends TestCase {
 	public void testRunAllSamples() throws KettleException, InterruptedException{
 		
 		String projectDir = System.getProperty("user.dir");
-		System.setProperty("KETTLE_PLUGIN_BASE_FOLDERS", projectDir+"/testdist"); // the plugin directory is in "dist"
+		System.setProperty("KETTLE_PLUGIN_BASE_FOLDERS", projectDir+"/testdist"); // the plugin directory is in "testdist"
 		
 		KettleEnvironment.init();
 		
