@@ -42,6 +42,8 @@ public class RubyStepData extends BaseStepData implements StepDataInterface {
 	public RowMetaInterface emptyRowMeta = new RowMeta();
 	public RowMetaInterface baseRowMeta;
 	
+	public boolean forcedHalt = false;
+	
     public RubyStepData()
 	{
 		super();

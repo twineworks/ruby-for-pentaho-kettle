@@ -50,7 +50,7 @@ public class RubyStep extends BaseStep implements StepInterface {
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 		meta = (RubyStepMeta) smi;
 		data = (RubyStepData) sdi;
-		
+		System.out.println("step dispose called");
 		if (model != null){
 			model.onDispose();
 			model = null;
@@ -59,6 +59,15 @@ public class RubyStep extends BaseStep implements StepInterface {
 		super.dispose(smi, sdi);
 	}
 
+	
+    public void stopRunning(StepMetaInterface stepMetaInterface, StepDataInterface stepDataInterface) throws KettleException{
+    	
+    	if (model != null){
+    		model.onStopRunning();
+    	}
+    }
+	
+	
 	// convenience method to find this plugin's directory
 	public String getPluginDir(){
 		

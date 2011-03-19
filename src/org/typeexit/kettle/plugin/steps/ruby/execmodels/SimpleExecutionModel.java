@@ -12,7 +12,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyThread;
 import org.jruby.RubyTime;
+import org.jruby.embed.EvalFailedException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -55,6 +58,8 @@ public class SimpleExecutionModel implements ExecutionModel {
 	public boolean onInit() {
 
 		try {
+
+			data.forcedHalt = false;
 
 			data.container = RubyStepFactory.createScriptingContainer(true, meta.getRubyVersion());
 
@@ -139,6 +144,54 @@ public class SimpleExecutionModel implements ExecutionModel {
 		data.rubyScriptObject = null;
 		data.runtime = null;
 
+	}
+
+	@Override
+	public void onStopRunning() throws KettleException {
+
+		// allow a few seconds for normal shutdown (i.e. completion of single row processing), before forcibly shutting things down 
+		new Thread(){
+			public void run(){
+				
+				try {
+					Thread.sleep(5000);
+					forceStopRubyThreads();
+				} catch (InterruptedException e) {
+				}
+			}
+		}.start();
+		
+		
+	}
+	
+	private void forceStopRubyThreads(){
+		
+		// if the container is disposed already, bail out
+		if (data.container == null) return;
+		
+		// try to kill all threads once
+		if (!data.forcedHalt) {
+			data.forcedHalt = true;
+		} else {
+			return;
+		}
+
+		if (data.runtime != null) {
+
+			RubyThread[] threads = data.runtime.getThreadService().getActiveRubyThreads();
+
+			for (int i = 0; i < threads.length; i++) {
+				try {
+					threads[i].kill();
+				} catch (ThreadKill e) {
+				}
+			}
+
+			data.runtime.tearDown();
+
+		}
+		
+		
 	}
 
 	private IRubyObject getMarshal() {
@@ -381,38 +434,74 @@ public class SimpleExecutionModel implements ExecutionModel {
 		// as calls to getRow() would yield rows from indeterminate sources unless
 		// all info streams have been emptied first
 		// we opt to enforce to have all info steps or no info steps
+		try {
 
-		Object[] r = null;
+			Object[] r = null;
 
-		if (step.first) {
-			data.hasDirectInput = meta.hasDirectInput();
-			// call the init script here rather than in the init section. It guarantees that other steps are fully initialized.
-			if (meta.getInitScript() != null) {
-				data.container.runScriptlet(new StringReader(meta.getInitScript().getScript()), meta.getInitScript().getTitle());
-			}
-
-			// this must be done before the first call to getRow() in case there are info streams present
-			initInfoRowStreams();
-		}
-
-		// directinput means, there's no info steps and at least one step providing data
-		if (data.hasDirectInput) {
-
-			r = step.getRow();
-
-			// only now is the metadata available 
 			if (step.first) {
-				initMainRowStream();
-				step.first = false;
+				data.hasDirectInput = meta.hasDirectInput();
+				// call the init script here rather than in the init section. It guarantees that other steps are fully initialized.
+				if (meta.getInitScript() != null) {
+					data.container.runScriptlet(new StringReader(meta.getInitScript().getScript()), meta.getInitScript().getTitle());
+				}
+
+				// this must be done before the first call to getRow() in case there are info streams present
+				initInfoRowStreams();
 			}
 
-			// get the next row 
-			if (r != null) {
+			// directinput means, there's no info steps and at least one step providing data
+			if (data.hasDirectInput) {
 
-				RubyHash rubyRow = createRubyInputRow(data.inputRowMeta, r);
+				r = step.getRow();
 
-				// put the row into the container
-				data.container.put("$row", rubyRow);
+				// only now is the metadata available 
+				if (step.first) {
+					initMainRowStream();
+					step.first = false;
+				}
+
+				// get the next row 
+				if (r != null) {
+
+					RubyHash rubyRow = createRubyInputRow(data.inputRowMeta, r);
+
+					// put the row into the container
+					data.container.put("$row", rubyRow);
+
+					// run the script, the result is one or more rows
+					IRubyObject scriptResult = data.rubyScriptObject.run();
+
+					data.rowList.clear();
+					fetchRowsFromScriptOutput(scriptResult, data.baseRowMeta, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
+
+					// now if the script has output rows, write them to the main output stream
+					for (Object[] outrow : data.rowList) {
+						step.putRow(data.outputRowMeta, outrow);
+					}
+
+					return true;
+				} else {
+
+					// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
+					// write "summary" rows and the like 
+					if (meta.getDisposeScript() != null) {
+						data.container.runScriptlet(meta.getDisposeScript().getScript());
+					}
+
+					// no more rows coming in
+					step.setOutputDone();
+					return false;
+				}
+
+			}
+
+			// no direct input means the script is not getting an input row and is executed exactly once
+			else {
+				if (step.first) {
+					initMainRowStream();
+					step.first = false;
+				}
+				r = new Object[data.outputRowMeta.size()];
 
 				// run the script, the result is one or more rows
 				IRubyObject scriptResult = data.rubyScriptObject.run();
@@ -425,48 +514,27 @@ public class SimpleExecutionModel implements ExecutionModel {
 					step.putRow(data.outputRowMeta, outrow);
 				}
 
-				return true;
-			} else {
-
 				// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
 				// write "summary" rows and the like 
 				if (meta.getDisposeScript() != null) {
 					data.container.runScriptlet(meta.getDisposeScript().getScript());
 				}
 
-				// no more rows coming in
 				step.setOutputDone();
 				return false;
 			}
 
-		}
-
-		// no direct input means the script is not getting an input row and is executed exactly once
-		else {
-			if (step.first) {
-				initMainRowStream();
-				step.first = false;
+		} catch (EvalFailedException e) {
+			if (!data.forcedHalt) {
+				throw new KettleException(e);
 			}
-			r = new Object[data.outputRowMeta.size()];
-
-			// run the script, the result is one or more rows
-			IRubyObject scriptResult = data.rubyScriptObject.run();
-
-			data.rowList.clear();
-			fetchRowsFromScriptOutput(scriptResult, data.baseRowMeta, r, data.rowList, meta.getAffectedFields(), data.outputRowMeta);
-
-			// now if the script has output rows, write them to the main output stream
-			for (Object[] outrow : data.rowList) {
-				step.putRow(data.outputRowMeta, outrow);
+			// transformation has been stopped
+			return false;
+		} catch (ThreadKill e) {
+			if (!data.forcedHalt) {
+				throw new KettleException(e);
 			}
-
-			// run the end script here rather then on dispose end, ensures that the row streams are still up, so user can choose to 
-			// write "summary" rows and the like 
-			if (meta.getDisposeScript() != null) {
-				data.container.runScriptlet(meta.getDisposeScript().getScript());
-			}
-
-			step.setOutputDone();
+			// transformation has been stopped
 			return false;
 		}
 

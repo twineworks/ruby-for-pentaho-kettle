@@ -12,5 +12,6 @@ public interface ExecutionModel {
 	public boolean onInit();
 	public void onDispose();
 	public boolean onProcessRow() throws KettleException;
+	public void onStopRunning() throws KettleException;
 
 }
