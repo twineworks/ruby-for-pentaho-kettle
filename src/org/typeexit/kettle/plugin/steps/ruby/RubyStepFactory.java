@@ -1,13 +1,10 @@
 package org.typeexit.kettle.plugin.steps.ruby;
 
-import java.lang.reflect.Field;
-
 import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.util.JRubyClassLoader;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 
 public class RubyStepFactory {
@@ -31,18 +28,7 @@ public class RubyStepFactory {
 		ClassLoader loader = ScriptingContainer.class.getClassLoader();
 		c.setClassLoader(loader);
 		
-		// make sure JDBC drivers do not! get unregistered, see http://jira.codehaus.org/browse/JRUBY-5528 
-		JRubyClassLoader rubyLoader = c.getProvider().getRuntime().getJRubyClassLoader();
-		try {
-			Field unloaderField = rubyLoader.getClass().getDeclaredField("unloader");
-			unloaderField.setAccessible(true);
-			unloaderField.set(rubyLoader, new Runnable(){public void run() {}});
-		} catch (SecurityException e) {
-		} catch (NoSuchFieldException e) {
-		} catch (IllegalArgumentException e) {
-		} catch (IllegalAccessException e) {
-		}
-		
+		// does it make sense to include more in the class path? 
 		
 //		List<String> paths = new ArrayList<String>();
 //		paths.add(c.getHomeDirectory());
