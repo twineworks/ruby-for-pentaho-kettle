@@ -50,7 +50,7 @@ public class RubyStep extends BaseStep implements StepInterface {
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 		meta = (RubyStepMeta) smi;
 		data = (RubyStepData) sdi;
-		System.out.println("step dispose called");
+		
 		if (model != null){
 			model.onDispose();
 			model = null;
