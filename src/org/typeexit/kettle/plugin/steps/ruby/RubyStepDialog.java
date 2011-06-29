@@ -1779,7 +1779,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
 		item.setData("role", script.getRole());
 
-		StyledTextComp wScript = new StyledTextComp(item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
+		StyledTextComp wScript = new StyledTextComp(transMeta, item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
 		wScript.setText(script.getScript());
 
 		props.setLook(wScript, Props.WIDGET_STYLE_FIXED);
