@@ -21,12 +21,15 @@
 	<property name="src" location="src" />
 	<property name="classes" location="classes" />
 	<property name="dist" location="dist" />
+	<property name="diststep" location="${dist}/steps/Ruby" />
+	<property name="distentry" location="${dist}/jobentries/Ruby" />
 	<property name="testsrc" location="test" />
 	<property name="testclasses" location="testclasses" />
 	<property name="testdist" location="testdist" />
 	<property name="package" location="package" />
 	<property name="pluginname" value="Ruby" />
-	<property name="jarfilename" value="ruby-step.jar" />
+	<property name="jarstepfilename" value="ruby-step.jar" />
+	<property name="jarentryfilename" value="ruby-entry.jar" />
 	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.zip" />
 
 	<!-- used for running the tests -->
@@ -35,7 +38,7 @@
 		<pathelement location="${testclasses}" />
 
 		<!-- the plugin jar -->
-		<pathelement location="${testdist}/steps/${pluginname}/${jarfilename}" />
+		<pathelement location="${testdist}/steps/${pluginname}/${jarstepfilename}" />
 
 		<!-- jruby -->
 		<fileset dir="${testdist}/steps/${pluginname}/lib">
@@ -93,22 +96,28 @@
 
 	<target name="dist" depends="compile" description="generate the distribution">
 
-		<mkdir dir="${dist}" />
+		<mkdir dir="${diststep}" />
+		<mkdir dir="${distentry}" />
 
 		<!-- jar things up, also add the properties files (messages) -->
 		<copy todir="${classes}">
 			<fileset dir="${src}" includes="**/*.properties" />
 		</copy>
-		<jar jarfile="${dist}/${jarfilename}" basedir="${classes}" />
+		<jar jarfile="${diststep}/${jarstepfilename}" basedir="${classes}" excludes="org/typeexit/kettle/plugin/entries/**/*.*"/>
+		<jar jarfile="${distentry}/${jarentryfilename}" basedir="${classes}" excludes="org/typeexit/kettle/plugin/steps/**/*.*"/>
 
 		<!-- Put the plugin.xml and icon into dist folder -->
-		<copy todir="${dist}">
+		<copy todir="${diststep}">
 			<fileset dir="plugin" includes="**/*.*" />
 			<fileset dir="plugin" includes="**" />
 		</copy>
+		<copy todir="${distentry}">
+			<fileset dir="plugin_jobentry" includes="**/*.*" />
+			<fileset dir="plugin_jobentry" includes="**" />
+		</copy>
 		<!-- put the deps into lib subfolder -->
-		<mkdir dir="${dist}/lib" />
-		<copy todir="${dist}/lib">
+		<mkdir dir="${diststep}/lib" />
+		<copy todir="${diststep}/lib">
 			<fileset dir="lib" includes="*.jar" />
 		</copy>
 
@@ -129,7 +138,7 @@
 		<copy todir="${classes}">
 			<fileset dir="${src}" includes="**/*.properties" />
 		</copy>
-		<jar jarfile="${testdist}/steps/${pluginname}/${jarfilename}" basedir="${classes}" />
+		<jar jarfile="${testdist}/steps/${pluginname}/${jarstepfilename}" basedir="${classes}" />
 
 		<!-- Put the plugin.xml and icon into dist folder -->
 		<copy todir="${testdist}/steps/${pluginname}">
@@ -147,14 +156,22 @@
 	<target name="install" depends="dist" description="install into local kettle">
 		<!-- remove previous installations -->
 		<delete dir="${kettle-dir}/plugins/steps/${pluginname}" />
+		<delete dir="${kettle-dir}/plugins/jobentries/${pluginname}" />
 
 		<!-- put fresh stuff in place -->
 		<mkdir dir="${kettle-dir}/plugins/steps/${pluginname}" />
+		<mkdir dir="${kettle-dir}/plugins/jobentries/${pluginname}" />
 
 		<copy todir="${kettle-dir}/plugins/steps/${pluginname}">
-			<fileset dir="${dist}" includes="**/*.*" />
-			<fileset dir="${dist}" includes="**" />
+			<fileset dir="${diststep}" includes="**/*.*" />
+			<fileset dir="${diststep}" includes="**" />
 		</copy>
+
+		<copy todir="${kettle-dir}/plugins/jobentries/${pluginname}">
+			<fileset dir="${distentry}" includes="**/*.*" />
+			<fileset dir="${distentry}" includes="**" />
+		</copy>
+	
 	</target>
 
 	<target name="package" depends="dist" description="package for distribution">
@@ -162,10 +179,10 @@
 		<delete dir="${package}" />
 		<mkdir dir="${package}" />
 		<mkdir dir="${package}/Sources" />
-		<mkdir dir="${package}/${pluginname}" />
+		<mkdir dir="${package}/plugins" />
 
 		<!-- copy plugin -->
-		<copy todir="${package}/${pluginname}">
+		<copy todir="${package}/plugins">
 			<fileset dir="${dist}" includes="**/*.*" />
 		</copy>
 
@@ -191,7 +208,7 @@
 		<!-- zip up the contents -->
 		<delete file="${package}/${zipfilename}" />
 		<zip destfile="${package}/${zipfilename}">
-			<zipfileset dir="${package}/${pluginname}" prefix="${pluginname}" />
+			<zipfileset dir="${package}/plugins" prefix="${pluginname}" />
 			<zipfileset dir="${package}/Sources" prefix="Sources" />
 			<zipfileset dir="." includes="INSTALLATION.txt" />
 			<zipfileset dir="." includes="LICENSE.txt" />

@@ -4,7 +4,7 @@
    id="TypeExitRubyStep"
    iconfile="images/icon.png"
    description="Ruby Scripting"
-   tooltip="Only there for demonstration purposes"
+   tooltip="Write a ruby script"
    category="Scripting"
    classname="org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta">
 		
