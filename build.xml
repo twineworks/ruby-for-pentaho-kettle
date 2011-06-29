@@ -104,17 +104,17 @@
 			<fileset dir="${src}" includes="**/*.properties" />
 		</copy>
 		<jar jarfile="${diststep}/${jarstepfilename}" basedir="${classes}" excludes="org/typeexit/kettle/plugin/entries/**/*.*"/>
-		<jar jarfile="${distentry}/${jarentryfilename}" basedir="${classes}" excludes="org/typeexit/kettle/plugin/steps/**/*.*"/>
+		<!--<jar jarfile="${distentry}/${jarentryfilename}" basedir="${classes}" excludes="org/typeexit/kettle/plugin/steps/**/*.*"/>-->
 
 		<!-- Put the plugin.xml and icon into dist folder -->
 		<copy todir="${diststep}">
 			<fileset dir="plugin" includes="**/*.*" />
 			<fileset dir="plugin" includes="**" />
 		</copy>
-		<copy todir="${distentry}">
+<!--		<copy todir="${distentry}">
 			<fileset dir="plugin_jobentry" includes="**/*.*" />
 			<fileset dir="plugin_jobentry" includes="**" />
-		</copy>
+		</copy> -->
 		<!-- put the deps into lib subfolder -->
 		<mkdir dir="${diststep}/lib" />
 		<copy todir="${diststep}/lib">
