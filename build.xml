@@ -30,7 +30,7 @@
 	<property name="pluginname" value="Ruby" />
 	<property name="jarstepfilename" value="ruby-step.jar" />
 	<property name="jarentryfilename" value="ruby-entry.jar" />
-	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.zip" />
+	<property name="zipfilename" value="${pluginname}Plugin_Kettle_4.2.zip" />
 
 	<!-- used for running the tests -->
 	<path id="test.classpath">
