@@ -103,6 +103,12 @@ public class RubyStepSamplesHelper {
 			Arrays.sort(files);
 
 			for (int i = 0; i < files.length; i++) {
+
+				// skip hidden files and directories (like .svn dirs)
+				if (files[i].getName().startsWith(".")){
+					continue;
+				}
+				
 				TreeItem item = new TreeItem(parent, SWT.NONE);
 				item.setText(new String[] { getSampleFileName(files[i]), getSampleFileLabel(files[i]) });
 				item.setImage(getSampleFileImage(files[i]));
