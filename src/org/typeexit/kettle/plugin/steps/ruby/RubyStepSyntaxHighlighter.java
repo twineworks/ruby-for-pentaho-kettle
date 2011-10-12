@@ -180,9 +180,17 @@ public class RubyStepSyntaxHighlighter {
 		String script = wText.getText();
 		StyledText canvas = wText.getStyledText();
 		byte[] utf8Script = null;
+		int[] encodingBytes = null;
 
 		try {
 			utf8Script = script.getBytes("UTF-8");
+			encodingBytes = new int[utf8Script.length+1];
+			int runner = 0;
+			for (int i = 0; i < utf8Script.length; i++) {
+				runner += (utf8Script[i] < 0 && -((int)utf8Script[i])+128 > 192)?1:0;
+				encodingBytes[i] = runner;
+			}
+			encodingBytes[encodingBytes.length-1] = runner;
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 			return;
@@ -220,8 +228,12 @@ public class RubyStepSyntaxHighlighter {
 					lastCommentEnd = rightTokenBorder;
 					//System.out.println("Found comment -> [" + leftTokenBorder + "," + rightTokenBorder + "]");
 					ranges.add(tokenToStyleRange(TOKEN_COMMENT, null, prevt));
-					intRanges.add(leftTokenBorder);
-					intRanges.add(rightTokenBorder-leftTokenBorder);
+
+					int left = leftTokenBorder - encodingBytes[leftTokenBorder];
+					int right = rightTokenBorder-encodingBytes[rightTokenBorder]- left;
+					
+					intRanges.add(left);
+					intRanges.add(right);
 				}
 				
 				/* read language syntax */
@@ -242,8 +254,10 @@ public class RubyStepSyntaxHighlighter {
 				// skip whitespace and error formatting
 				if (t != '\n' && t != -1){ 
 					ranges.add(tokenToStyleRange(t, v, prevt));
-					intRanges.add(leftTokenBorder);
-					intRanges.add(rightTokenBorder-leftTokenBorder);
+					int left = leftTokenBorder - encodingBytes[leftTokenBorder];
+					int right = rightTokenBorder-encodingBytes[rightTokenBorder]- (leftTokenBorder - encodingBytes[leftTokenBorder]);
+					intRanges.add(left);
+					intRanges.add(right); 
 				}
 			
 			}
@@ -257,8 +271,9 @@ public class RubyStepSyntaxHighlighter {
 				intRanges.remove(intRanges.size()-1);
 			}
 			ranges.add(tokenToStyleRange(t, null, prevt));
-			intRanges.add(leftTokenBorder);
-			intRanges.add(wText.getText().length() - leftTokenBorder);
+			int left = leftTokenBorder - encodingBytes[leftTokenBorder];
+			intRanges.add(left);
+			intRanges.add(wText.getText().length() - left);
 
 		} catch (Exception e) {
 			// the lexer will sometimes throw a non-syntax exception when confronted with malformed input
