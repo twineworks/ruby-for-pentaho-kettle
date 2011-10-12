@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="RubyStep 4.0" default="dist" basedir=".">
+<project name="RubyStep 4.x" default="dist" basedir=".">
 	<description>
         Build file for a Kettle plugin
     </description>
