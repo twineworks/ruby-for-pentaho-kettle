@@ -526,7 +526,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 			}				
 			
 			// load gem home 
-			gemHome = rep.getStepAttributeString(id_step, "gem_home");
+			gemHome = Const.NVL(rep.getStepAttributeString(id_step, "gem_home"),"");
 			
 			
 		} catch (Exception e) {
