@@ -25,6 +25,7 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParserResult;
 import org.jruby.parser.Tokens;
+import org.jruby.Ruby;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 
@@ -110,7 +111,9 @@ public class RubyStepSyntaxHighlighter {
 		lexer = new RubyYaccLexer();
 
 		ParserSupport parserSupport = new ParserSupport();
-		ParserConfiguration parserConfig = new ParserConfiguration(null, 0, true, CompatVersion.BOTH);
+    RubyStepMeta meta = new RubyStepMeta();
+    Ruby runtime = RubyStepFactory.createScriptingContainer(true,meta.getRubyVersion()).getProvider().getRuntime();
+		ParserConfiguration parserConfig = new ParserConfiguration(runtime, 0, true, CompatVersion.BOTH);
 		parserSupport.setConfiguration(parserConfig);
 		parserSupport.setResult(new RubyParserResult());
 		parserSupport.setWarnings(new RubyWarnings(null));
