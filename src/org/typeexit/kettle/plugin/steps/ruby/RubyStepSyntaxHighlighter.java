@@ -243,7 +243,7 @@ public class RubyStepSyntaxHighlighter {
 				int oldOffset = lexerSource.getOffset();
 				prevt = t;
 				t = lexer.nextToken();
-        keepParsing = (t == 0 ? false: true);
+        keepParsing = (t == 0 ? false : true);
 				Object v = lexer.value();
 
 				leftTokenBorder = oldOffset;
