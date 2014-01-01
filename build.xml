@@ -69,12 +69,12 @@
 		<fileset dir="${kettle-dir}/lib">
 			<include name="**/*.jar" />
 		</fileset>
-		<fileset dir="${kettle-dir}/libext">
+    <!-- <fileset dir="${kettle-dir}/libext">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="${kettle-dir}/libext/pentaho">
 			<include name="**/*.jar" />
-		</fileset>
+    </fileset> -->
 		<fileset dir="${kettle-dir}/libswt">
 			<include name="**/*.jar" />
 		</fileset>

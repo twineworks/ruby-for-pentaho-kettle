@@ -5,3 +5,4 @@ testdist
 testclasses
 package
 .DS_Store
+.*.swp
