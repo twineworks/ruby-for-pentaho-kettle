@@ -26,7 +26,6 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParserResult;
 import org.jruby.parser.Tokens;
 import org.jruby.Ruby;
-import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.ScriptingContainer;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
