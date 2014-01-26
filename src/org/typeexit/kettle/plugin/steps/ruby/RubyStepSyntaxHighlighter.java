@@ -26,6 +26,7 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParserResult;
 import org.jruby.parser.Tokens;
 import org.jruby.Ruby;
+import org.jruby.embed.ScriptingContainer;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 import org.typeexit.kettle.plugin.steps.ruby.RubyStepMeta.RubyVersion;
 
@@ -112,7 +113,8 @@ public class RubyStepSyntaxHighlighter {
 
 		ParserSupport parserSupport = new ParserSupport();
     RubyStepMeta meta = new RubyStepMeta();
-    Ruby runtime = RubyStepFactory.createScriptingContainer(true,meta.getRubyVersion()).getProvider().getRuntime();
+    ScriptingContainer container = RubyStepFactory.createScriptingContainer(true,meta.getRubyVersion());
+    Ruby runtime = container.getProvider().getRuntime();
 		ParserConfiguration parserConfig = new ParserConfiguration(runtime, 0, true, CompatVersion.BOTH);
 		parserSupport.setConfiguration(parserConfig);
 		parserSupport.setResult(new RubyParserResult());
@@ -241,9 +243,9 @@ public class RubyStepSyntaxHighlighter {
 				
 				/* read language syntax */
 				int oldOffset = lexerSource.getOffset();
-				keepParsing = lexer.advance();
 				prevt = t;
-				t = lexer.token();
+				t = lexer.nextToken();
+        keepParsing = (t == 0 ? false : true);
 				Object v = lexer.value();
 
 				leftTokenBorder = oldOffset;
