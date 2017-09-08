@@ -1,0 +1,15 @@
+version: 0.{branch}.{build}
+build_script:
+- cmd: mvn package -B -V
+test_script:
+- cmd: mvn -DskipTests=false test -B
+notifications:
+- provider: Email
+  to:
+  - slawomir.chodnicki@gmail.com
+  subject: AppVeyor build status changed
+  on_build_success: false
+  on_build_failure: false
+  on_build_status_changed: true
+cache:
+  - '%USERPROFILE%\.m2 -> appveyor.yml'
