@@ -119,7 +119,7 @@ public class KettleTestHelper {
   public static void printLog(Trans trans) {
 
     LoggingBuffer appender = KettleLogStore.getAppender();
-    String logText = appender.getBuffer(trans.getLogChannelId(), false).toString();
+    String logText = appender.getBuffer(trans.getLogChannelId(), true).toString();
     System.err.flush();
     System.err.println("*************************************************************************");
     System.err.println("TRANSFORMATION LOG: \n");
