@@ -1,5 +1,8 @@
 # Ruby scripting for [pentaho-kettle](https://github.com/pentaho/pentaho-kettle)
 
+[![Java 7+](https://img.shields.io/badge/java-7+-4c7e9f.svg)](http://java.oracle.com) [![License](https://img.shields.io/badge/license-LGPL2.1-4c7e9f.svg)](https://raw.githubusercontent.com/twineworks/ruby-for-pentaho-kettle/master/LICENSE.txt) [![Travis Build Status](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle.svg?branch=master)](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/qd422po9spre0men/branch/master?svg=true)](https://ci.appveyor.com/project/slawo-ch/ruby-for-pentaho-kettle/branch/master)
+
+
 This project provides a scripting step similar to the javascript and java class steps. The implementation is based on [jruby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
 
 ## How to get it?
