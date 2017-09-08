@@ -1,4 +1,0 @@
-To install the plugin simply copy the Ruby folder
-to the plugins/steps folder of your Kettle installation
-and restart Kettle. The plugin should appear in the
-"Scripting" section as "Ruby Scripting".
