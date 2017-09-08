@@ -518,7 +518,9 @@ public class SimpleExecutionModel implements ExecutionModel {
 
         // only now is the metadata available
         if (step.first) {
-          initMainRowStream();
+          if (r != null){
+            initMainRowStream();
+          }
           step.first = false;
         }
 

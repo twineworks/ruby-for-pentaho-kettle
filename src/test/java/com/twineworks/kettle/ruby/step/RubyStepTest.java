@@ -57,4 +57,12 @@ public class RubyStepTest {
     assertThat(trans.getErrors()).isEqualTo(0);
   }
 
+  @Test
+  public void updates_fields_in_empty_stream() throws Exception {
+    Trans trans = runTransform("src/test/resources/etl/step/update_fields_in_empty_stream/update_fields_in_empty_stream.ktr", 20);
+
+    assertThat(trans.isFinished()).isTrue();
+    assertThat(trans.getErrors()).isEqualTo(0);
+  }
+
 }
