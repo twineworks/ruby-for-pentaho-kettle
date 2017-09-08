@@ -108,6 +108,8 @@
   <hop> <from>metadata conversion inet</from><to>ruby</to><enabled>Y</enabled> </hop>
   <hop> <from>set binary field</from><to>metadata conversion k</to><enabled>Y</enabled> </hop>
   <hop> <from>metadata conversion k</from><to>kettle</to><enabled>Y</enabled> </hop>
+  <hop> <from>kettle</from><to>kettle row</to><enabled>Y</enabled> </hop>
+  <hop> <from>ruby</from><to>ruby row</to><enabled>Y</enabled> </hop>
   </order>
   <step>
     <name>Fail</name>
@@ -127,165 +129,6 @@
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>1050</xloc>
       <yloc>225</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Select values</name>
-    <type>SelectValues</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <fields>      <field>        <name>result</name>
-        <rename/>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>        <select_unspecified>N</select_unspecified>
-    </fields>     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>800</xloc>
-      <yloc>150</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>good</name>
-    <type>Dummy</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>1050</xloc>
-      <yloc>75</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>is identical&#x3f;</name>
-    <type>FilterRows</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-<send_true_to>good</send_true_to>
-<send_false_to>Fail</send_false_to>
-    <compare>
-<condition>
- <negated>N</negated>
- <leftvalue>result</leftvalue>
- <function>&#x3d;</function>
- <rightvalue/>
- <value><name>constant</name><type>String</type><text>identical</text><length>-1</length><precision>-1</precision><isnull>N</isnull><mask/></value> </condition>
-    </compare>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>925</xloc>
-      <yloc>150</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>generate row</name>
-    <type>TypeExitRubyStep</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-	<scripts>
-		<script>
-			<title>Ruby Script</title>
-			<body>&#x23; your script goes here &#xa;require &#x27;ipaddr&#x27;&#xa;&#xa;&#x7b;&#xa;	&#x22;key&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;str&#x22;    &#x3d;&#x3e; &#x22;string&#x22;,&#xa;	&#x22;int&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;num&#x22;    &#x3d;&#x3e; 0.25,&#xa;	&#x22;bignum&#x22; &#x3d;&#x3e; 123456789123456789123456789123456789,&#xa;	&#x22;bin&#x22;    &#x3d;&#x3e; &#x5b;1, 2, 3, 4&#x5d;,&#xa;	&#x22;bool&#x22;   &#x3d;&#x3e; true,&#xa;	&#x22;date&#x22;   &#x3d;&#x3e; Time.new&#x28;1989, 11, 28, 6, 5, 34, &#x22;&#x2b;00&#x3a;00&#x22;&#x29;,&#xa;	&#x22;ts&#x22;     &#x3d;&#x3e; Time.at&#x28;628232734.123456835&#x29;, &#x23; same date as above, with some nanoseconds&#xa;	&#x22;inet&#x22;   &#x3d;&#x3e; IPAddr.new&#x28;&#x22;192.168.2.1&#x22;&#x29;	&#xa;&#x7d;</body>
-			<role>ROW_SCRIPT</role>
-		</script>
-	</scripts>
-	<clearInputFields>N</clearInputFields>
-
-	<outputFields>
-		<outputField>
-			<name>key</name>
-			<type>5</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>str</name>
-			<type>2</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>int</name>
-			<type>5</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>num</name>
-			<type>1</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>bignum</name>
-			<type>6</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>bool</name>
-			<type>4</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>date</name>
-			<type>3</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>ts</name>
-			<type>9</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>inet</name>
-			<type>10</type>
-			<update>N</update>
-		</outputField>
-		<outputField>
-			<name>bin</name>
-			<type>8</type>
-			<update>N</update>
-		</outputField>
-	</outputFields>
-	<rubyVariables>
-	</rubyVariables>
-	<infoSteps>
-	</infoSteps>
-	<targetSteps>
-	</targetSteps>
-	<gemHome/>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>125</xloc>
-      <yloc>75</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -381,7 +224,7 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>1989&#x2f;11&#x2f;28 06&#x3a;05&#x3a;34.000 UTC</nullif>
+        <nullif>1989&#x2f;11&#x2f;28 06&#x3a;05&#x3a;34.000 GMT</nullif>
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
@@ -425,51 +268,6 @@
     </step>
 
   <step>
-    <name>set binary field</name>
-    <type>Janino</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-       <formula><field_name>bin</field_name>
-<formula_string>new byte&#x5b;&#x5d;&#x7b;0x01,0x02,0x03,0x04&#x7d;</formula_string>
-<value_type>Binary</value_type>
-<value_length>-1</value_length>
-<value_precision>-1</value_precision>
-<replace_field/>
-</formula>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>250</xloc>
-      <yloc>225</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>ruby</name>
-    <type>Dummy</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>550</xloc>
-      <yloc>75</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
     <name>Merge Rows &#x28;diff&#x29;</name>
     <type>MergeRows</type>
     <description/>
@@ -508,10 +306,169 @@
     </step>
 
   <step>
-    <name>kettle</name>
+    <name>Select values</name>
+    <type>SelectValues</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <fields>      <field>        <name>result</name>
+        <rename/>
+        <length>-2</length>
+        <precision>-2</precision>
+      </field>        <select_unspecified>N</select_unspecified>
+    </fields>     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>800</xloc>
+      <yloc>150</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>generate row</name>
+    <type>TypeExitRubyStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+	<scripts>
+		<script>
+			<title>Ruby Script</title>
+			<body>&#x23; your script goes here &#xa;require &#x27;ipaddr&#x27;&#xa;&#xa;&#x7b;&#xa;	&#x22;key&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;str&#x22;    &#x3d;&#x3e; &#x22;string&#x22;,&#xa;	&#x22;int&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;num&#x22;    &#x3d;&#x3e; 0.25,&#xa;	&#x22;bignum&#x22; &#x3d;&#x3e; 123456789123456789123456789123456789,&#xa;	&#x22;bin&#x22;    &#x3d;&#x3e; &#x5b;1, 2, 3, 4&#x5d;,&#xa;	&#x22;bool&#x22;   &#x3d;&#x3e; true,&#xa;	&#x22;date&#x22;   &#x3d;&#x3e; Time.new&#x28;1989, 11, 28, 6, 5, 34, &#x22;&#x2b;00&#x3a;00&#x22;&#x29;,&#xa;	&#x22;ts&#x22;     &#x3d;&#x3e; Time.at&#x28;628232734.123456835&#x29;, &#x23; same date as above, with some nanoseconds&#xa;	&#x22;inet&#x22;   &#x3d;&#x3e; IPAddr.new&#x28;&#x22;192.168.2.1&#x22;&#x29;	&#xa;&#x7d;</body>
+			<role>ROW_SCRIPT</role>
+		</script>
+	</scripts>
+	<clearInputFields>N</clearInputFields>
+
+	<outputFields>
+		<outputField>
+			<name>key</name>
+			<type>5</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>str</name>
+			<type>2</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>int</name>
+			<type>5</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>num</name>
+			<type>1</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>bignum</name>
+			<type>6</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>bool</name>
+			<type>4</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>date</name>
+			<type>3</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>ts</name>
+			<type>9</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>inet</name>
+			<type>10</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>bin</name>
+			<type>8</type>
+			<update>N</update>
+		</outputField>
+	</outputFields>
+	<rubyVariables>
+	</rubyVariables>
+	<infoSteps>
+	</infoSteps>
+	<targetSteps>
+	</targetSteps>
+	<gemHome/>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>125</xloc>
+      <yloc>75</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>good</name>
     <type>Dummy</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>1050</xloc>
+      <yloc>75</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>is identical&#x3f;</name>
+    <type>FilterRows</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+<send_true_to>good</send_true_to>
+<send_false_to>Fail</send_false_to>
+    <compare>
+<condition>
+ <negated>N</negated>
+ <leftvalue>result</leftvalue>
+ <function>&#x3d;</function>
+ <rightvalue/>
+ <value><name>constant</name><type>String</type><text>identical</text><length>-1</length><precision>-1</precision><isnull>N</isnull><mask/></value> </condition>
+    </compare>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>925</xloc>
+      <yloc>150</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>kettle</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>N</distribute>
     <custom_distribution/>
     <copies>1</copies>
          <partitioning>
@@ -622,6 +579,163 @@
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>400</xloc>
       <yloc>225</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>ruby</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>N</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>550</xloc>
+      <yloc>75</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>set binary field</name>
+    <type>Janino</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+       <formula><field_name>bin</field_name>
+<formula_string>new byte&#x5b;&#x5d;&#x7b;0x01,0x02,0x03,0x04&#x7d;</formula_string>
+<value_type>Binary</value_type>
+<value_length>-1</value_length>
+<value_precision>-1</value_precision>
+<replace_field/>
+</formula>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>250</xloc>
+      <yloc>225</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>kettle row</name>
+    <type>WriteToLog</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+      <loglevel>log_level_basic</loglevel>
+      <displayHeader>Y</displayHeader>
+      <limitRows>N</limitRows>
+      <limitRowsNumber>0</limitRowsNumber>
+      <logmessage/>
+    <fields>
+      <field>
+        <name>key</name>
+        </field>
+      <field>
+        <name>str</name>
+        </field>
+      <field>
+        <name>int</name>
+        </field>
+      <field>
+        <name>num</name>
+        </field>
+      <field>
+        <name>bignum</name>
+        </field>
+      <field>
+        <name>bool</name>
+        </field>
+      <field>
+        <name>date</name>
+        </field>
+      <field>
+        <name>ts</name>
+        </field>
+      <field>
+        <name>inet</name>
+        </field>
+      <field>
+        <name>bin</name>
+        </field>
+      </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>550</xloc>
+      <yloc>325</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>ruby row</name>
+    <type>WriteToLog</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+      <loglevel>log_level_basic</loglevel>
+      <displayHeader>Y</displayHeader>
+      <limitRows>N</limitRows>
+      <limitRowsNumber>0</limitRowsNumber>
+      <logmessage/>
+    <fields>
+      <field>
+        <name>key</name>
+        </field>
+      <field>
+        <name>str</name>
+        </field>
+      <field>
+        <name>int</name>
+        </field>
+      <field>
+        <name>num</name>
+        </field>
+      <field>
+        <name>bignum</name>
+        </field>
+      <field>
+        <name>bool</name>
+        </field>
+      <field>
+        <name>date</name>
+        </field>
+      <field>
+        <name>ts</name>
+        </field>
+      <field>
+        <name>inet</name>
+        </field>
+      <field>
+        <name>bin</name>
+        </field>
+      </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>652</xloc>
+      <yloc>43</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
