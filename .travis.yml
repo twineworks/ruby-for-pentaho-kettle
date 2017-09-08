@@ -1,0 +1,10 @@
+language: java
+jdk: oraclejdk8
+
+os: linux
+dist: trusty
+group: stable
+
+cache:
+  directories:
+  - $HOME/.m2
