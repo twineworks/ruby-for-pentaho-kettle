@@ -10,8 +10,7 @@ Decompress the release zip to `<kettle-dir>/plugins` and restart Spoon. The "Rub
 
 ## How do I write ruby scripts in Kettle?
 The Ruby scripting step comes with a lot of samples. Access them by opening a Ruby step dialog and exploring the samples section on the left.
-
-![Samples](https://github.com/type-exit/Ruby-Scripting-for-Kettle/blob/master/plugin/images/samples.png?raw=true)
+![Samples](https://raw.githubusercontent.com/twineworks/ruby-for-pentaho-kettle/master/images/screenshot.png)
 
 ## Features at a glance
  - rows are represented as a hashes, indexed by field name
@@ -28,34 +27,26 @@ The Ruby scripting step comes with a lot of samples. Access them by opening a Ru
  - you may use ruby gems in Kettle transformations
 
 ## Where do I report bugs and issues?
-Please use the github [issue tracker](https://github.com/type-exit/Ruby-Scripting-for-Kettle/issues).
+Just open [issues](https://github.com/twineworks/ruby-for-pentaho-kettle/issues) on github.
 
 ## Can I use Ruby Gems?
-Absolutely, as long as [jruby](https://github.com/jruby) likes the gem, which usually means that the gem it has no unsupported native bindings, you may use gems as with any other ruby program. There scripting step comes with samples demonstrating the use and installation of gems.
+Absolutely, as long as [jruby](https://github.com/jruby) likes the gem, which usually means that the gem it has no unsupported native bindings, you may use gems as with any other ruby program. You can define where your `gem_home` is on a per-step basis or globally.
 
-## How do I compile the project?
-Before you can use the ant build script you need to **edit build.properties** and make the kettle-dir property point to a Kettle 4.x installation folder. After that it's simple ant invocations.
+## How do I build the project?
+Just run:
+```bash
+mvn package
+```
+It creates the plugin zip in `target/ruby-for-pentaho-kettle-{version}-plugin.zip`.
 
-To compile:
+## How do I run the test suite?
+Create a package first.Packaging skips tests, since you can only run them once the complete plugin folder has been constructed as an artefact.
 
-	ant compile
-
-To run the test suite:
-
-	ant test
-
-To create a distribution package:
-
-	ant package
-
-To install into the Kettle folder:
-
-	ant install
-
-
-## Can I setup the project in Eclipse?
-Sure, just import the project into Eclipse after checking out. You need to adjust the build path to refer to the Kettle jars of your Kettle 4.x installation.
+```bash
+mvn package
+mvn -DskipTests=false test
+```
 
 ## How can I contribute?
-If you'd like to contribute please fork the project, add the feature or bugfix and send a pull request, so I can include your contribution and mention you in the credits.
+If you'd like to contribute please fork the project, add the feature or bugfix and send a pull request, so I can include your contribution and mention you in the credits. If your change majorly changes the way the plugin works, we should discuss it via an open issue first.
 
