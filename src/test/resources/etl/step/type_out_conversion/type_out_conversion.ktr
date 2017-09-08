@@ -105,10 +105,10 @@
   <hop> <from>generate row</from><to>metadata conversion inet</to><enabled>Y</enabled> </hop>
   <hop> <from>set binary field</from><to>metadata conversion k</to><enabled>Y</enabled> </hop>
   <hop> <from>metadata conversion k</from><to>kettle row</to><enabled>Y</enabled> </hop>
-  <hop> <from>kettle row</from><to>kettle</to><enabled>Y</enabled> </hop>
   <hop> <from>metadata conversion inet</from><to>ruby row</to><enabled>Y</enabled> </hop>
-  <hop> <from>ruby row</from><to>ruby</to><enabled>Y</enabled> </hop>
   <hop> <from>Merge Rows &#x28;diff&#x29;</from><to>is identical&#x3f;</to><enabled>Y</enabled> </hop>
+  <hop> <from>kettle row</from><to>ruby</to><enabled>Y</enabled> </hop>
+  <hop> <from>ruby row</from><to>kettle</to><enabled>Y</enabled> </hop>
   </order>
   <step>
     <name>Fail</name>
