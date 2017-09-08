@@ -8,3 +8,6 @@ group: stable
 cache:
   directories:
   - $HOME/.m2
+
+install: mvn package -B -V
+script: mvn -DskipTests=false test -B
