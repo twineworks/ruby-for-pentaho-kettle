@@ -108,8 +108,8 @@
   <hop> <from>Merge Rows &#x28;diff&#x29;</from><to>is identical&#x3f;</to><enabled>Y</enabled> </hop>
   <hop> <from>ruby row</from><to>ruby</to><enabled>Y</enabled> </hop>
   <hop> <from>kettle row</from><to>kettle</to><enabled>Y</enabled> </hop>
-  <hop> <from>set bin fields</from><to>create timestamp</to><enabled>Y</enabled> </hop>
-  <hop> <from>create timestamp</from><to>metadata conversion k</to><enabled>Y</enabled> </hop>
+  <hop> <from>set bin fields</from><to>set ts field</to><enabled>Y</enabled> </hop>
+  <hop> <from>set ts field</from><to>metadata conversion k</to><enabled>Y</enabled> </hop>
   </order>
   <step>
     <name>Fail</name>
@@ -705,8 +705,8 @@
     </step>
 
   <step>
-    <name>create timestamp</name>
-    <type>ScriptValueMod</type>
+    <name>set ts field</name>
+    <type>UserDefinedJavaClass</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -715,20 +715,52 @@
            <method>none</method>
            <schema_name/>
            </partitioning>
-    <compatible>N</compatible>
-    <optimizationLevel>9</optimizationLevel>
-    <jsScripts>      <jsScript>        <jsScript_type>0</jsScript_type>
-        <jsScript_name>Script 1</jsScript_name>
-        <jsScript_script>&#x2f;&#x2f;Script here&#xa;&#xa;ts &#x3d; new java.sql.Timestamp&#x28;date.getTime&#x28;&#x29;&#x29;&#xa;ts.setNanos&#x28;123456835&#x29;&#xa;</jsScript_script>
-      </jsScript>    </jsScripts>    <fields>      <field>        <name>ts</name>
-        <rename>ts</rename>
-        <type>Timestamp</type>
-        <length>-1</length>
-        <precision>-1</precision>
-        <replace>N</replace>
-      </field>    </fields>     <cluster_schema/>
+
+    <definitions>
+        <definition>
+        <class_type>TRANSFORM_CLASS</class_type>
+
+        <class_name>Processor</class_name>
+
+        <class_source><![CDATA[public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException
+{
+	Object[] r = getRow();
+	if (r == null) {
+		setOutputDone();
+		return false;
+	}
+
+    r = createOutputRow(r, data.outputRowMeta.size());
+	
+    // Set a timestamp value in the output field
+	java.sql.Timestamp ts = new java.sql.Timestamp(628232734000L);
+	ts.setNanos(123456835);
+	
+	get(Fields.Out, "ts").setValue(r, ts);	
+
+	// Send the row on to the next step.
+    putRow(data.outputRowMeta, r);
+
+	return true;
+}
+]]></class_source>
+        </definition>
+    </definitions>
+    <fields>
+        <field>
+        <field_name>ts</field_name>
+
+        <field_type>Timestamp</field_type>
+
+        <field_length>-1</field_length>
+
+        <field_precision>-1</field_precision>
+
+        </field>
+    </fields><clear_result_fields>N</clear_result_fields>
+<info_steps></info_steps><target_steps></target_steps><usage_parameters></usage_parameters>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>400</xloc>
+      <xloc>350</xloc>
       <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
