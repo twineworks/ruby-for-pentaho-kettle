@@ -105,11 +105,11 @@
   <hop> <from>kettle</from><to>Merge Rows &#x28;diff&#x29;</to><enabled>Y</enabled> </hop>
   <hop> <from>Merge Rows &#x28;diff&#x29;</from><to>Select values</to><enabled>Y</enabled> </hop>
   <hop> <from>generate row</from><to>metadata conversion inet</to><enabled>Y</enabled> </hop>
-  <hop> <from>metadata conversion inet</from><to>ruby</to><enabled>Y</enabled> </hop>
   <hop> <from>set binary field</from><to>metadata conversion k</to><enabled>Y</enabled> </hop>
-  <hop> <from>metadata conversion k</from><to>kettle</to><enabled>Y</enabled> </hop>
-  <hop> <from>kettle</from><to>kettle row</to><enabled>Y</enabled> </hop>
-  <hop> <from>ruby</from><to>ruby row</to><enabled>Y</enabled> </hop>
+  <hop> <from>metadata conversion k</from><to>kettle row</to><enabled>Y</enabled> </hop>
+  <hop> <from>kettle row</from><to>kettle</to><enabled>Y</enabled> </hop>
+  <hop> <from>metadata conversion inet</from><to>ruby row</to><enabled>Y</enabled> </hop>
+  <hop> <from>ruby row</from><to>ruby</to><enabled>Y</enabled> </hop>
   </order>
   <step>
     <name>Fail</name>
@@ -127,7 +127,7 @@
       <always_log_rows>Y</always_log_rows>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>1050</xloc>
+      <xloc>1150</xloc>
       <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
@@ -299,7 +299,7 @@
     </compare>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>675</xloc>
+      <xloc>775</xloc>
       <yloc>150</yloc>
       <draw>Y</draw>
       </GUI>
@@ -323,7 +323,7 @@
       </field>        <select_unspecified>N</select_unspecified>
     </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>800</xloc>
+      <xloc>900</xloc>
       <yloc>150</yloc>
       <draw>Y</draw>
       </GUI>
@@ -429,7 +429,7 @@
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>1050</xloc>
+      <xloc>1150</xloc>
       <yloc>75</yloc>
       <draw>Y</draw>
       </GUI>
@@ -458,7 +458,7 @@
     </compare>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>925</xloc>
+      <xloc>1025</xloc>
       <yloc>150</yloc>
       <draw>Y</draw>
       </GUI>
@@ -477,7 +477,7 @@
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>550</xloc>
+      <xloc>650</xloc>
       <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
@@ -596,7 +596,7 @@
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>550</xloc>
+      <xloc>650</xloc>
       <yloc>75</yloc>
       <draw>Y</draw>
       </GUI>
@@ -679,7 +679,7 @@
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>550</xloc>
-      <yloc>325</yloc>
+      <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -734,8 +734,8 @@
       </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>652</xloc>
-      <yloc>43</yloc>
+      <xloc>550</xloc>
+      <yloc>75</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
