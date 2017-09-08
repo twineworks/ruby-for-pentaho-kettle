@@ -223,7 +223,8 @@ public class SimpleExecutionModel implements ExecutionModel {
   private void initMainRowStream() throws KettleException {
 
     // steps inputRowMeta might be null in case we have info steps only, or there's no input to begin with
-    RowMetaInterface inputRowMeta = step.getInputRowMeta();
+
+    RowMetaInterface inputRowMeta = meta.getInputRowMeta();
     if (inputRowMeta == null) {
       inputRowMeta = new RowMeta();
     }
@@ -518,9 +519,7 @@ public class SimpleExecutionModel implements ExecutionModel {
 
         // only now is the metadata available
         if (step.first) {
-          if (r != null){
-            initMainRowStream();
-          }
+          initMainRowStream();
           step.first = false;
         }
 

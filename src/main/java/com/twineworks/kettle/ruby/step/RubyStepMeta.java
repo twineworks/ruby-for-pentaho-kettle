@@ -72,6 +72,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
   private List<ValueMetaInterface> affectedFields;
   private boolean clearInputFields;
   private String gemHome;
+  private RowMetaInterface inputRowMeta;
 
   public RubyStepMeta() {
     super();
@@ -85,6 +86,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
   @Override
   public void getFields(RowMetaInterface r, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space, Repository repo, IMetaStore metaStore) throws KettleStepException {
 
+    inputRowMeta = r.clone();
     affectedFields = new ArrayList<ValueMetaInterface>(outputFields.size());
 
     if (clearInputFields) {
@@ -133,6 +135,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
         }
 
       }
+
     } catch (KettlePluginException e){
       throw new KettleStepException(e.getMessage(), e);
     }
@@ -702,4 +705,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
     this.gemHome = gemHome;
   }
 
+  public RowMetaInterface getInputRowMeta() {
+    return inputRowMeta;
+  }
 }
