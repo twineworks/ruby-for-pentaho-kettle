@@ -224,9 +224,17 @@ public class SimpleExecutionModel implements ExecutionModel {
 
     // steps inputRowMeta might be null in case we have info steps only, or there's no input to begin with
 
-    RowMetaInterface inputRowMeta = meta.getInputRowMeta();
+    RowMetaInterface inputRowMeta = step.getInputRowMeta();
     if (inputRowMeta == null) {
-      inputRowMeta = new RowMeta();
+      // when steps connect, but there's no rows, there's also no input row meta
+      if (data.hasDirectInput){
+        inputRowMeta = step.getTransMeta().getPrevStepFields(step.getStepMeta());
+      }
+      // when steps don't connect, there's no fields
+      else{
+        inputRowMeta = new RowMeta();
+      }
+
     }
 
     data.inputRowMeta = inputRowMeta.clone();
