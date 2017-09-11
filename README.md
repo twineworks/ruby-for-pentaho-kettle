@@ -13,11 +13,22 @@ The plugin is built and tested against the most recent versions of Kettle 5.x, 6
 
 ## How to get it?
 Grab the latest release from the [releases](https://github.com/twineworks/ruby-for-pentaho-kettle/releases) page.
+You can also get the plugin zip as a maven dependency through [sonatype.org](https://oss.sonatype.org/#nexus-search;quick~ruby-for-pentaho-kettle) and [maven central](http://repo1.maven.org/maven2/com/twineworks/ruby-for-pentaho-kettle/). 
+Use the following dependency descriptor:
+```xml
+<dependency>
+  <groupId>com.twineworks</groupId>
+  <artifactId>ruby-for-pentaho-kettle</artifactId>
+  <version>1.3.2</version>
+  <classifier>plugin</classifier>
+  <type>zip</type>
+</dependency>
+```
 
 ## How to install?
 Decompress the release zip to `<kettle-dir>/plugins` and restart Spoon. The "Ruby Script" step will appear in the "Scripting" section of a transformation.
 
-## How do I write ruby scripts in Kettle?
+## How do I write ruby scripts in kettle?
 The ruby scripting step comes with a lot of samples. You can access them by opening a ruby step dialog and exploring the samples section on the left.
 ![Samples](https://raw.githubusercontent.com/twineworks/ruby-for-pentaho-kettle/master/images/screenshot.png)
 
@@ -38,8 +49,8 @@ The ruby scripting step comes with a lot of samples. You can access them by open
 ## Where do I report bugs and issues?
 Just open [issues](https://github.com/twineworks/ruby-for-pentaho-kettle/issues) on github.
 
-## What about Ruby Gems?
-You can use Ruby Gems, absolutely. As long as [JRuby](https://github.com/jruby/jruby) likes the gem, which usually means that the gem it has no unsupported native bindings, you may use gems as with any other ruby program. You can define where your `gem_home` is on a per-step basis or globally.
+## What about ruby gems?
+You can use ruby gems. As long as [JRuby](https://github.com/jruby/jruby) likes the gem, which usually means that the gem has no unsupported native bindings, you may use gems as with any other ruby program. You can define where your `gem_home` is on a per-step basis or globally through the kettle variable `RUBY_GEM_HOME`.
 
 By default the plugin uses `<plugin-dir>/gems` as its gems directory. Here's an example for maintaining your gems at the
 default location:
@@ -57,7 +68,7 @@ Successfully installed bundler-1.15.4
 # create a simple Gemfile
 $ echo "source 'http://rubygems.org'" > Gemfile
 $ echo "gem 'chronic' # https://github.com/mojombo/chronic" >> Gemfile
- $ cat Gemfile
+$ cat Gemfile
 source 'http://rubygems.org'
 gem 'chronic' # https://github.com/mojombo/chronic
 
