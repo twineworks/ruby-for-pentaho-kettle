@@ -53,7 +53,7 @@ import java.util.List;
 
 @Step(
   id = "TypeExitRubyStep",
-  image = "com/twineworks/kettle/ruby/step/resources/step.png",
+  image = "com/twineworks/kettle/ruby/step/resources/step.svg",
   i18nPackageName = "com.twineworks.kettle.ruby.step",
   name = "RubyStep.Step.Title",
   description = "RubyStep.Step.Tooltip",
