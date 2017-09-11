@@ -72,7 +72,7 @@ Bundle complete! 1 Gemfile dependency, 2 gems now installed.
 Use `bundle info [gemname]` to see where a bundled gem is installed.
 ```
 
-Once the gems are in place, you can require it in your scripts like usual:
+Once the gems are in place, you can require them in your scripts like usual:
 
 ```ruby
 require 'chronic'
