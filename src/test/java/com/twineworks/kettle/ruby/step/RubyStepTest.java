@@ -58,6 +58,14 @@ public class RubyStepTest {
   }
 
   @Test
+  public void converts_kettle_values_to_ruby_values() throws Exception {
+    Trans trans = runTransform("src/test/resources/etl/step/type_in_conversion/type_in_conversion.ktr", 20);
+
+    assertThat(trans.isFinished()).isTrue();
+    assertThat(trans.getErrors()).isEqualTo(0);
+  }
+
+  @Test
   public void updates_fields_in_empty_stream() throws Exception {
     Trans trans = runTransform("src/test/resources/etl/step/update_fields_in_empty_stream/update_fields_in_empty_stream.ktr", 20);
 
