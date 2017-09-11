@@ -9,5 +9,10 @@ cache:
   directories:
   - $HOME/.m2
 
-install: mvn package -B -V
-script: mvn -DskipTests=false test -B
+install: mvn -Dpentaho.kettle.version=${KETTLE_VERSION} package -B -V
+script: mvn -Dpentaho.kettle.version=${KETTLE_VERSION} -DskipTests=false test -B
+
+env:
+- KETTLE_VERSION=5.4.1.8-209
+- KETTLE_VERSION=6.1.0.9-307
+- KETTLE_VERSION=7.1.0.4-63
