@@ -76,7 +76,7 @@
   <notepads>
     <notepad>
       <note>Internet addresses are not comparable in PDI 5.x,&#xa;hence converting to string first</note>
-      <xloc>250</xloc>
+      <xloc>400</xloc>
       <yloc>150</yloc>
       <width>310</width>
       <heigth>42</heigth>
@@ -230,6 +230,18 @@
         <set_empty_string>N</set_empty_string>
       </field>
       <field>
+        <name>date_int</name>
+        <type>Date</type>
+        <format>yyyy&#x2f;MM&#x2f;dd HH&#x3a;mm&#x3a;ss.SSS z</format>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif>1989&#x2f;11&#x2f;28 05&#x3a;05&#x3a;34.000 UTC</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
         <name>inet</name>
         <type>Internet Address</type>
         <format/>
@@ -237,6 +249,18 @@
         <decimal/>
         <group/>
         <nullif>192.168.2.1</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>inet_int</name>
+        <type>Internet Address</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif>10.1.2.3</nullif>
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
@@ -276,9 +300,12 @@
       <value>bignum</value>
       <value>bool</value>
       <value>date</value>
-      <value>ts</value>
+      <value>date_int</value>
       <value>inet</value>
+      <value>inet_int</value>
       <value>bin</value>
+      <value>ts</value>
+      <value>ts_int</value>
     </values>
 <flag_field>result</flag_field>
 <reference>ruby</reference>
@@ -307,7 +334,7 @@
 	<scripts>
 		<script>
 			<title>Ruby Script</title>
-			<body>&#x23; your script goes here &#xa;require &#x27;ipaddr&#x27;&#xa;&#xa;&#x7b;&#xa;	&#x22;key&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;str&#x22;    &#x3d;&#x3e; &#x22;string&#x22;,&#xa;	&#x22;int&#x22;    &#x3d;&#x3e; 1,&#xa;	&#x22;num&#x22;    &#x3d;&#x3e; 0.25,&#xa;	&#x22;bignum&#x22; &#x3d;&#x3e; 123456789123456789123456789123456789,&#xa;	&#x22;bin&#x22;    &#x3d;&#x3e; &#x5b;1, 2, 3, 4&#x5d;,&#xa;	&#x22;bool&#x22;   &#x3d;&#x3e; true,&#xa;	&#x22;date&#x22;   &#x3d;&#x3e; Time.utc&#x28;1989, 11, 28, 5, 5, 34&#x29;,&#xa;	&#x22;ts&#x22;     &#x3d;&#x3e; Time.at&#x28;628232734.123456835&#x29;, &#x23; same date as above, with some nanoseconds&#xa;	&#x22;inet&#x22;   &#x3d;&#x3e; IPAddr.new&#x28;&#x22;192.168.2.1&#x22;&#x29;	&#xa;&#x7d;</body>
+			<body>&#x23; your script goes here &#xa;require &#x27;ipaddr&#x27;&#xa;&#xa;&#x7b;&#xa;	&#x22;key&#x22;      &#x3d;&#x3e; 1,&#xa;	&#x22;str&#x22;      &#x3d;&#x3e; &#x22;string&#x22;,&#xa;	&#x22;int&#x22;      &#x3d;&#x3e; 1,&#xa;	&#x22;num&#x22;      &#x3d;&#x3e; 0.25,&#xa;	&#x22;bignum&#x22;   &#x3d;&#x3e; 123456789123456789123456789123456789,&#xa;	&#x22;bin&#x22;      &#x3d;&#x3e; &#x5b;1, 2, 3, 4&#x5d;,&#xa;	&#x22;bool&#x22;     &#x3d;&#x3e; true,&#xa;	&#x22;date&#x22;     &#x3d;&#x3e; Time.utc&#x28;1989, 11, 28, 5, 5, 34&#x29;,&#xa;	&#x22;ts&#x22;       &#x3d;&#x3e; Time.at&#x28;628232734.123456835&#x29;, &#x23; same date as above, with some nanoseconds&#xa;	&#x22;inet&#x22;     &#x3d;&#x3e; IPAddr.new&#x28;&#x22;192.168.2.1&#x22;&#x29;,&#xa;	&#x22;ts_int&#x22;   &#x3d;&#x3e; 628232734000, &#x23; converts to milliseconds since epoch&#xa;	&#x22;date_int&#x22; &#x3d;&#x3e; 628232734000, &#x23; converts to milliseconds since epoch&#xa;	&#x22;inet_int&#x22; &#x3d;&#x3e; 0x0A010203    &#x23; converts to 10.1.2.3 ip&#xa;&#x7d;</body>
 			<role>ROW_SCRIPT</role>
 		</script>
 	</scripts>
@@ -350,7 +377,17 @@
 			<update>N</update>
 		</outputField>
 		<outputField>
+			<name>date_int</name>
+			<type>3</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
 			<name>inet</name>
+			<type>10</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>inet_int</name>
 			<type>10</type>
 			<update>N</update>
 		</outputField>
@@ -361,6 +398,11 @@
 		</outputField>
 		<outputField>
 			<name>ts</name>
+			<type>9</type>
+			<update>N</update>
+		</outputField>
+		<outputField>
+			<name>ts_int</name>
 			<type>9</type>
 			<update>N</update>
 		</outputField>
@@ -448,6 +490,71 @@
     </step>
 
   <step>
+    <name>kettle row</name>
+    <type>WriteToLog</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+      <loglevel>log_level_basic</loglevel>
+      <displayHeader>Y</displayHeader>
+      <limitRows>N</limitRows>
+      <limitRowsNumber>0</limitRowsNumber>
+      <logmessage/>
+    <fields>
+      <field>
+        <name>key</name>
+        </field>
+      <field>
+        <name>str</name>
+        </field>
+      <field>
+        <name>int</name>
+        </field>
+      <field>
+        <name>num</name>
+        </field>
+      <field>
+        <name>bignum</name>
+        </field>
+      <field>
+        <name>bool</name>
+        </field>
+      <field>
+        <name>date</name>
+        </field>
+      <field>
+        <name>date_int</name>
+        </field>
+      <field>
+        <name>inet</name>
+        </field>
+      <field>
+        <name>inet_int</name>
+        </field>
+      <field>
+        <name>bin</name>
+        </field>
+      <field>
+        <name>ts</name>
+        </field>
+      <field>
+        <name>ts_int</name>
+        </field>
+      </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>650</xloc>
+      <yloc>225</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
     <name>metadata conversion inet</name>
     <type>SelectValues</type>
     <description/>
@@ -461,6 +568,21 @@
     <fields>        <select_unspecified>N</select_unspecified>
       <meta>        <name>inet</name>
         <rename>inet</rename>
+        <type>String</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask/>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
+      </meta>      <meta>        <name>inet_int</name>
+        <rename>inet_int</rename>
         <type>String</type>
         <length>-2</length>
         <precision>-2</precision>
@@ -524,6 +646,21 @@
         <grouping_symbol/>
         <currency_symbol/>
         <storage_type/>
+      </meta>      <meta>        <name>inet_int</name>
+        <rename>inet_int</rename>
+        <type>String</type>
+        <length>-2</length>
+        <precision>-2</precision>
+        <conversion_mask/>
+        <date_format_lenient>false</date_format_lenient>
+        <date_format_locale/>
+        <date_format_timezone/>
+        <lenient_string_to_number>false</lenient_string_to_number>
+        <encoding/>
+        <decimal_symbol/>
+        <grouping_symbol/>
+        <currency_symbol/>
+        <storage_type/>
       </meta>      <meta>        <name>num</name>
         <rename>num</rename>
         <type>Number</type>
@@ -541,7 +678,7 @@
         <storage_type/>
       </meta>    </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>575</xloc>
+      <xloc>500</xloc>
       <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
@@ -562,88 +699,6 @@
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>750</xloc>
       <yloc>75</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>set bin fields</name>
-    <type>Janino</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-       <formula><field_name>bin</field_name>
-<formula_string>new byte&#x5b;&#x5d;&#x7b;0x01,0x02,0x03,0x04&#x7d;</formula_string>
-<value_type>Binary</value_type>
-<value_length>-1</value_length>
-<value_precision>-1</value_precision>
-<replace_field/>
-</formula>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>250</xloc>
-      <yloc>225</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>kettle row</name>
-    <type>WriteToLog</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-      <loglevel>log_level_basic</loglevel>
-      <displayHeader>Y</displayHeader>
-      <limitRows>N</limitRows>
-      <limitRowsNumber>0</limitRowsNumber>
-      <logmessage/>
-    <fields>
-      <field>
-        <name>key</name>
-        </field>
-      <field>
-        <name>str</name>
-        </field>
-      <field>
-        <name>int</name>
-        </field>
-      <field>
-        <name>num</name>
-        </field>
-      <field>
-        <name>bignum</name>
-        </field>
-      <field>
-        <name>bool</name>
-        </field>
-      <field>
-        <name>date</name>
-        </field>
-      <field>
-        <name>ts</name>
-        </field>
-      <field>
-        <name>inet</name>
-        </field>
-      <field>
-        <name>bin</name>
-        </field>
-      </fields>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>675</xloc>
-      <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -687,19 +742,54 @@
         <name>date</name>
         </field>
       <field>
-        <name>ts</name>
+        <name>date_int</name>
         </field>
       <field>
         <name>inet</name>
         </field>
       <field>
+        <name>inet_int</name>
+        </field>
+      <field>
         <name>bin</name>
+        </field>
+      <field>
+        <name>ts</name>
+        </field>
+      <field>
+        <name>ts_int</name>
         </field>
       </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>650</xloc>
       <yloc>75</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>set bin fields</name>
+    <type>Janino</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+       <formula><field_name>bin</field_name>
+<formula_string>new byte&#x5b;&#x5d;&#x7b;0x01,0x02,0x03,0x04&#x7d;</formula_string>
+<value_type>Binary</value_type>
+<value_length>-1</value_length>
+<value_precision>-1</value_precision>
+<replace_field/>
+</formula>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>250</xloc>
+      <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -738,6 +828,9 @@
 	
 	get(Fields.Out, "ts").setValue(r, ts);	
 
+    java.sql.Timestamp ts_int = new java.sql.Timestamp(628232734000L);
+	get(Fields.Out, "ts_int").setValue(r, ts_int);	
+
 	// Send the row on to the next step.
     putRow(data.outputRowMeta, r);
 
@@ -749,6 +842,16 @@
     <fields>
         <field>
         <field_name>ts</field_name>
+
+        <field_type>Timestamp</field_type>
+
+        <field_length>-1</field_length>
+
+        <field_precision>-1</field_precision>
+
+        </field>
+        <field>
+        <field_name>ts_int</field_name>
 
         <field_type>Timestamp</field_type>
 
