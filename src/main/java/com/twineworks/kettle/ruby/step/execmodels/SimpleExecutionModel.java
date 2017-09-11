@@ -292,22 +292,22 @@ public class SimpleExecutionModel implements ExecutionModel {
         ValueMetaInterface vm = rowMeta.getValueMeta(i);
 
         switch (vm.getType()) {
-          case ValueMeta.TYPE_BOOLEAN:
+          case ValueMetaInterface.TYPE_BOOLEAN:
             rubyRow.put(field, vm.getBoolean(r[i]));
             break;
-          case ValueMeta.TYPE_INTEGER:
+          case ValueMetaInterface.TYPE_INTEGER:
             rubyRow.put(field, vm.getInteger(r[i]));
             break;
-          case ValueMeta.TYPE_STRING:
+          case ValueMetaInterface.TYPE_STRING:
             rubyRow.put(field, vm.getString(r[i]));
             break;
-          case ValueMeta.TYPE_NUMBER:
+          case ValueMetaInterface.TYPE_NUMBER:
             rubyRow.put(field, vm.getNumber(r[i]));
             break;
-          case ValueMeta.TYPE_NONE:
+          case ValueMetaInterface.TYPE_NONE:
             rubyRow.put(field, r[i]);
             break;
-          case ValueMeta.TYPE_SERIALIZABLE:
+          case ValueMetaInterface.TYPE_SERIALIZABLE:
             if (r[i] instanceof RubyStepMarshalledObject) {
               Object restoredObject = getMarshal().callMethod(data.runtime.getCurrentContext(), "restore", data.runtime.newString(r[i].toString()));
               rubyRow.put(field, restoredObject);
@@ -316,7 +316,7 @@ public class SimpleExecutionModel implements ExecutionModel {
               rubyRow.put(field, r[i]);
             }
             break;
-          case ValueMeta.TYPE_BINARY:
+          case ValueMetaInterface.TYPE_BINARY:
             // put a ruby array with bytes in there, that is expensive and should probably be avoided
             rubyRow.put(fieldNames[i],
               data.runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(data.runtime, ArrayUtils.toObject((byte[]) vm.getBinary(r[i]))))
@@ -324,16 +324,16 @@ public class SimpleExecutionModel implements ExecutionModel {
 
             break;
 
-          case ValueMeta.TYPE_BIGNUMBER:
+          case ValueMetaInterface.TYPE_BIGNUMBER:
             IRubyObject bigDecimalObject = getBigDecimal().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString((vm.getBigNumber(r[i])).toString()));
             rubyRow.put(field, bigDecimalObject);
             break;
 
-          case ValueMeta.TYPE_DATE:
+          case ValueMetaInterface.TYPE_DATE:
             rubyRow.put(field, data.runtime.newTime((vm.getDate(r[i])).getTime()));
             break;
 
-          case ValueMeta.TYPE_TIMESTAMP:
+          case ValueMetaInterface.TYPE_TIMESTAMP:
             ValueMetaTimestamp vmTimestamp = (ValueMetaTimestamp) vm;
             Timestamp ts = vmTimestamp.getTimestamp(r[i]);
             RubyTime rubyTime = data.runtime.newTime(ts.getTime()/1000*1000);
@@ -341,7 +341,7 @@ public class SimpleExecutionModel implements ExecutionModel {
             rubyRow.put(field, rubyTime);
             break;
 
-          case ValueMeta.TYPE_INET:
+          case ValueMetaInterface.TYPE_INET:
             ValueMetaInternetAddress vmInet = (ValueMetaInternetAddress) vm;
             InetAddress ip = vmInet.getInternetAddress(r[i]);
             IRubyObject ipObject = getIPAddr().callMethod(data.runtime.getCurrentContext(), "new", data.runtime.newString(ip.getHostAddress()));
@@ -372,23 +372,23 @@ public class SimpleExecutionModel implements ExecutionModel {
 
         // TODO: provide a meaningful error message if conversion fails because the user put non-convertible results in there (like a string saying "true"/"false" for the bool type)
         switch (outField.getType()) {
-          case ValueMeta.TYPE_BOOLEAN:
+          case ValueMetaInterface.TYPE_BOOLEAN:
             javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Boolean.class);
             break;
-          case ValueMeta.TYPE_INTEGER:
+          case ValueMetaInterface.TYPE_INTEGER:
             javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Long.class);
             break;
-          case ValueMeta.TYPE_STRING:
+          case ValueMetaInterface.TYPE_STRING:
             javaValue = rubyVal.toString();
             break;
-          case ValueMeta.TYPE_NUMBER:
+          case ValueMetaInterface.TYPE_NUMBER:
             javaValue = JavaEmbedUtils.rubyToJava(data.runtime, rubyVal, Double.class);
             break;
-          case ValueMeta.TYPE_SERIALIZABLE:
+          case ValueMetaInterface.TYPE_SERIALIZABLE:
             String marshalled = getMarshal().callMethod(data.runtime.getCurrentContext(), "dump", rubyVal).toString();
             javaValue = new RubyStepMarshalledObject(marshalled);
             break;
-          case ValueMeta.TYPE_BINARY:
+          case ValueMetaInterface.TYPE_BINARY:
             // TODO: provide meaningful error message if this fails
             RubyArray arr = rubyVal.convertToArray();
 
@@ -403,7 +403,7 @@ public class SimpleExecutionModel implements ExecutionModel {
             }
             javaValue = bytes;
             break;
-          case ValueMeta.TYPE_BIGNUMBER:
+          case ValueMetaInterface.TYPE_BIGNUMBER:
             if (rubyVal instanceof RubyFloat) {
               javaValue = new BigDecimal((Double) rubyVal.toJava(Double.class));
             } else {
@@ -411,7 +411,7 @@ public class SimpleExecutionModel implements ExecutionModel {
             }
 
             break;
-          case ValueMeta.TYPE_DATE:
+          case ValueMetaInterface.TYPE_DATE:
             if (rubyVal instanceof RubyFixnum) {
               javaValue = new Date(((RubyFixnum) rubyVal).getLongValue());
             } else if (rubyVal instanceof RubyTime) {
@@ -422,7 +422,7 @@ public class SimpleExecutionModel implements ExecutionModel {
             }
             break;
 
-          case ValueMeta.TYPE_TIMESTAMP:
+          case ValueMetaInterface.TYPE_TIMESTAMP:
             if (rubyVal instanceof RubyFixnum) {
               javaValue = new java.sql.Timestamp(((RubyFixnum) rubyVal).getLongValue());
             } else if (rubyVal instanceof RubyTime) {
@@ -437,7 +437,7 @@ public class SimpleExecutionModel implements ExecutionModel {
             }
             break;
 
-          case ValueMeta.TYPE_INET:
+          case ValueMetaInterface.TYPE_INET:
             Long longNum = (Long) data.container.callMethod(rubyVal, "to_i");
             javaValue = toInetAddress(longNum.intValue());
             break;

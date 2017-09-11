@@ -85,7 +85,7 @@ public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
   @Override
   public void getFields(RowMetaInterface r, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space, Repository repo, IMetaStore metaStore) throws KettleStepException {
 
-    affectedFields = new ArrayList<ValueMetaInterface>(outputFields.size());
+    affectedFields = new ArrayList<>(outputFields.size());
 
     if (clearInputFields) {
       r.clear();

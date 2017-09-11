@@ -46,8 +46,8 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -452,7 +452,6 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
         if (!cancel()) {
           e.doit = false;
         }
-        ;
       }
     });
 
@@ -545,7 +544,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
     ColumnInfo[] colinf = new ColumnInfo[]{
       new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.Fieldname"), ColumnInfo.COLUMN_TYPE_TEXT, false), //$NON-NLS-1$
-      new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.Type"), ColumnInfo.COLUMN_TYPE_CCOMBO, ValueMeta.getTypes()), //$NON-NLS-1$
+      new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.Type"), ColumnInfo.COLUMN_TYPE_CCOMBO, ValueMetaFactory.getAllValueMetaNames()), //$NON-NLS-1$
       new ColumnInfo(BaseMessages.getString(PKG, "RubyStepDialog.ColumnInfo.UpdateExisting"), ColumnInfo.COLUMN_TYPE_CCOMBO, NO_YES) //$NON-NLS-1$
     };
 
@@ -1121,7 +1120,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
     for (OutputFieldMeta outField : input.getOutputFields()) {
       TableItem row = wFields.table.getItem(rowNum++);
       row.setText(1, outField.getName());
-      row.setText(2, ValueMeta.getTypeDesc(outField.getType()));
+      row.setText(2, ValueMetaFactory.getValueMetaName(outField.getType()));
       row.setText(3, outField.isUpdate() ? NO_YES[1] : NO_YES[0]);
     }
     wFields.optWidth(true);
@@ -1215,7 +1214,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
     int fieldCount = wFields.nrNonEmpty();
     for (int i = 0; i < fieldCount; i++) {
       TableItem t = wFields.getNonEmpty(i);
-      outFields.add(new OutputFieldMeta(t.getText(1), ValueMeta.getType(t.getText(2)), NO_YES[1].equalsIgnoreCase(t.getText(3))));
+      outFields.add(new OutputFieldMeta(t.getText(1), ValueMetaFactory.getIdForValueMeta(t.getText(2)), NO_YES[1].equalsIgnoreCase(t.getText(3))));
     }
 
     // save clear input fields flag
@@ -1727,7 +1726,7 @@ public class RubyStepDialog extends BaseStepDialog implements StepDialogInterfac
 
     item.setData("role", script.getRole());
 
-    StyledTextComp wScript = new StyledTextComp(transMeta, item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle());
+    StyledTextComp wScript = new StyledTextComp(transMeta, item.getParent(), SWT.MULTI | SWT.LEFT | SWT.H_SCROLL | SWT.V_SCROLL, script.getTitle(), false);
     wScript.setText(script.getScript());
 
     props.setLook(wScript, Props.WIDGET_STYLE_FIXED);

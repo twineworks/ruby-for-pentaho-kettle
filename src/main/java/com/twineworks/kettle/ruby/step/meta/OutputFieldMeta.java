@@ -19,7 +19,7 @@
 
 package com.twineworks.kettle.ruby.step.meta;
 
-import org.pentaho.di.core.row.ValueMeta;
+import org.pentaho.di.core.row.ValueMetaInterface;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -55,28 +55,28 @@ public class OutputFieldMeta implements Cloneable {
     this.type = type;
 
     switch (type) {
-      case ValueMeta.TYPE_NONE:
+      case ValueMetaInterface.TYPE_NONE:
         conversionClass = void.class;
         break;
-      case ValueMeta.TYPE_INTEGER:
+      case ValueMetaInterface.TYPE_INTEGER:
         conversionClass = Long.class;
         break;
-      case ValueMeta.TYPE_BOOLEAN:
+      case ValueMetaInterface.TYPE_BOOLEAN:
         conversionClass = Boolean.class;
         break;
-      case ValueMeta.TYPE_DATE:
+      case ValueMetaInterface.TYPE_DATE:
         conversionClass = Date.class;
         break;
-      case ValueMeta.TYPE_BIGNUMBER:
+      case ValueMetaInterface.TYPE_BIGNUMBER:
         conversionClass = BigDecimal.class;
         break;
-      case ValueMeta.TYPE_NUMBER:
+      case ValueMetaInterface.TYPE_NUMBER:
         conversionClass = Double.class;
         break;
-      case ValueMeta.TYPE_SERIALIZABLE:
+      case ValueMetaInterface.TYPE_SERIALIZABLE:
         conversionClass = Serializable.class;
         break;
-      case ValueMeta.TYPE_STRING:
+      case ValueMetaInterface.TYPE_STRING:
         conversionClass = String.class;
         break;
     }
