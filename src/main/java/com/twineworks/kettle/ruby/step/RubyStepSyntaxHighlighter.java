@@ -52,11 +52,13 @@ public class RubyStepSyntaxHighlighter {
   private final int TOKEN_COMMENT = -100;
   private final int COLOR_BLACK = 0;
   private final int COLOR_GREENISH = 1;
-  private final int COLOR_BLUE = 2;
-  private final int COLOR_ORANGE = 4;
-  private final int COLOR_RED = 5;
-  private final int COLOR_GREEN = 6;
+  private final int COLOR_VIOLET = 2;
+  private final int COLOR_BLUE = 3;
+  private final int COLOR_BLUE_GREEN = 4;
+  private final int COLOR_YELLOW = 5;
+  private final int COLOR_RED = 6;
   private final int COLOR_GRAY = 7;
+  private final int COLOR_ORANGE = 8;
   private final int STYLE_DEFAULT = 0;
   private final int STYLE_STRING = 1;
   private final int STYLE_SYMBOL = 2;
@@ -67,6 +69,8 @@ public class RubyStepSyntaxHighlighter {
   private final int STYLE_COMMENT = 7;
   private final int STYLE_CONSTANT = 8;
   private final int STYLE_VARIABLE = 9;
+  private final int STYLE_NUMBER = 10;
+
   private final StyleRange[] styles;
   private RubyLexer lexer;
   private ParserSupport parserSupport;
@@ -95,27 +99,29 @@ public class RubyStepSyntaxHighlighter {
     // -- the colors to use --
     Display display = Display.getDefault();
     Color[] colors = new Color[]{
-      new Color(display, new RGB(0, 0, 0)),        // Black
-      new Color(display, new RGB(63, 127, 95)),    // Greenish
-      new Color(display, new RGB(0, 0, 192)),      // Blue
-      new Color(display, new RGB(127, 0, 85)),      // -- not used --
-      new Color(display, new RGB(255, 102, 0)),    // Orange
-      new Color(display, new RGB(225, 0, 0)),      // Red
-      new Color(display, new RGB(0, 128, 0)),      // Green
-      new Color(display, new RGB(128, 128, 128))   // Gray
+      new Color(display, new RGB(0, 0, 0)),          // Black
+      new Color(display, new RGB(63, 127, 95)),      // Greenish
+      new Color(display, new RGB(137, 89, 168)),     // Violet
+      new Color(display, new RGB(66, 113, 174)),     // Blue
+      new Color(display, new RGB(62, 153, 159)),     // BlueGreen
+      new Color(display, new RGB(234, 183, 0)),      // Yellow
+      new Color(display, new RGB(200, 40, 41)),      // Red
+      new Color(display, new RGB(142, 144, 140)),    // Gray
+      new Color(display, new RGB(245, 135, 31))      // Orange
     };
 
     styles = new StyleRange[]{
       new StyleRange(0, 0, null, null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_RED], null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_ORANGE], null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_BLUE], null, SWT.BOLD),
-      new StyleRange(0, 0, colors[COLOR_GREEN], null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_GREEN], null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_GRAY], null, SWT.BOLD),
       new StyleRange(0, 0, colors[COLOR_GREENISH], null, SWT.NORMAL),
-      new StyleRange(0, 0, colors[COLOR_GRAY], null, SWT.BOLD),
-      new StyleRange(0, 0, colors[COLOR_GRAY], null, SWT.NORMAL)
+      new StyleRange(0, 0, colors[COLOR_GREENISH], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_VIOLET], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_BLUE], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_BLUE], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_BLUE_GREEN], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_GRAY], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_YELLOW], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_RED], null, SWT.NORMAL),
+      new StyleRange(0, 0, colors[COLOR_ORANGE], null, SWT.NORMAL)
     };
 
   }
@@ -130,6 +136,11 @@ public class RubyStepSyntaxHighlighter {
     switch (token) {
       case TOKEN_COMMENT:
         return styles[STYLE_COMMENT];
+
+      case Tokens.tINTEGER:
+      case Tokens.tFLOAT:
+      case Tokens.tRATIONAL:
+        return styles[STYLE_NUMBER];
       case Tokens.tSTRING_BEG:
       case Tokens.tSTRING_CONTENT:
       case Tokens.tSTRING_END:
