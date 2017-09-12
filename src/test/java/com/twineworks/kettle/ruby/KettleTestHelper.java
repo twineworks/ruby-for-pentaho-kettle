@@ -37,7 +37,7 @@ public class KettleTestHelper {
   static {
 
     // the plugin directory is created by `mvn package`
-    pluginDir = "target/ruby-for-pentaho-kettle-"+VersionTestHelper.projectVersion;
+    pluginDir = "target/ruby-for-pentaho-kettle";
   }
 
   public static void initKettle() throws Exception {

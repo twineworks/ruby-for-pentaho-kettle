@@ -24,7 +24,20 @@
     <formats>
         <format>zip</format>
     </formats>
+
+    <baseDirectory>${project.artifactId}</baseDirectory>
+
+    <!-- version.xml for marketplace -->
+    <files>
+        <file>
+            <source>plugin/version.xml</source>
+            <outputDirectory>.</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
     <fileSets>
+        <!-- Any READMEs and LICENSEs -->
         <fileSet>
             <directory>${project.basedir}</directory>
             <outputDirectory>.</outputDirectory>
@@ -34,6 +47,8 @@
                 <include>NOTICE*</include>
             </includes>
         </fileSet>
+
+        <!-- plugin samples -->
         <fileSet>
             <directory>${project.basedir}/plugin</directory>
             <outputDirectory>.</outputDirectory>
@@ -41,6 +56,8 @@
                 <include>**/*</include>
             </includes>
         </fileSet>
+
+        <!-- the main plugin jar -->
         <fileSet>
             <directory>${project.build.directory}</directory>
             <outputDirectory>.</outputDirectory>
@@ -49,6 +66,7 @@
             </includes>
         </fileSet>
     </fileSets>
+
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
