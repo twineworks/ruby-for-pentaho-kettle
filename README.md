@@ -3,6 +3,7 @@
 [![Kettle 5.x](https://img.shields.io/badge/pentaho_kettle-5.x--7.x-4c7e9f.svg)](https://github.com/pentaho/pentaho-kettle)
 [![Java 7+](https://img.shields.io/badge/java-7+-4c7e9f.svg)](http://java.oracle.com)
 [![License](https://img.shields.io/badge/license-LGPL2.1-4c7e9f.svg)](https://raw.githubusercontent.com/twineworks/ruby-for-pentaho-kettle/master/LICENSE.txt)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.twineworks/ruby-for-pentaho-kettle/badge.svg)](http://search.maven.org/#search|gav|1|g:"com.twineworks"%20AND%20a:"ruby-for-pentaho-kettle")
 [![Travis Build Status](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle.svg?branch=master)](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/qd422po9spre0men/branch/master?svg=true)](https://ci.appveyor.com/project/slawo-ch/ruby-for-pentaho-kettle/branch/master)
 
@@ -13,17 +14,8 @@ The plugin is built and tested against the most recent versions of Kettle 5.x, 6
 
 ## How to get it?
 Grab the latest release from the [releases](https://github.com/twineworks/ruby-for-pentaho-kettle/releases) page.
-You can also get the plugin zip as a maven dependency through [sonatype.org](https://oss.sonatype.org/#nexus-search;quick~ruby-for-pentaho-kettle) and [maven central](http://repo1.maven.org/maven2/com/twineworks/ruby-for-pentaho-kettle/). 
-Use the following dependency descriptor:
-```xml
-<dependency>
-  <groupId>com.twineworks</groupId>
-  <artifactId>ruby-for-pentaho-kettle</artifactId>
-  <version>1.3.4</version>
-  <classifier>plugin</classifier>
-  <type>zip</type>
-</dependency>
-```
+You can also get the plugin zip as a maven dependency from [maven central](http://search.maven.org/#search|gav|1|g:"com.twineworks"%20AND%20a:"ruby-for-pentaho-kettle"). 
+
 
 ## How to install?
 Decompress the release zip to `<kettle-dir>/plugins` and restart Spoon. The "Ruby Script" step will appear in the "Scripting" section of a transformation.
