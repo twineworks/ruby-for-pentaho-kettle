@@ -19,7 +19,7 @@ Use the following dependency descriptor:
 <dependency>
   <groupId>com.twineworks</groupId>
   <artifactId>ruby-for-pentaho-kettle</artifactId>
-  <version>1.3.3</version>
+  <version>1.3.4</version>
   <classifier>plugin</classifier>
   <type>zip</type>
 </dependency>
@@ -89,10 +89,9 @@ Once the gems are in place, you can require them in your scripts like usual:
 require 'chronic'
 
 {
-	"date_guess" => Chronic::parse("tomorrow afternoon")
+  "date_guess" => Chronic::parse("tomorrow afternoon")
 }
 ```
-
 
 ## How do I build the project?
 ```bash
