@@ -89,10 +89,10 @@ mvn package
 It creates the plugin zip in `target/ruby-for-pentaho-kettle-{version}-plugin.zip`.
 
 ## How do I run the test suite?
-Create a package, then run the tests. The packaging process unzips the plugin into `target/ruby-for-pentaho-kettle-{version}`, which
+Create a package, then run the tests. The packaging process unzips the plugin into `target/ruby-for-pentaho-kettle`, which
 enables kettle to find the plugin when running integration tests.
 ```bash
-mvn package
+mvn clean package
 mvn -DskipTests=false test
 ```
 
