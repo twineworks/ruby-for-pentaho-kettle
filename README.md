@@ -26,17 +26,14 @@ The ruby scripting step comes with a lot of samples. You can access them by open
 
 ## Features at a glance
  - rows are represented as hashes, indexed by field name
- - automatic conversion between all kettle data types and native ruby types
- - scripts have access to rows from info steps
- - scripts can send rows selectively to target steps
- - scripts may redirect rows to an error stream by using kettle's error handling feature
- - a script tab may be declared a **start script**, which executes only once before the first row arrives, useful for init tasks
- - a script tab may be declared an **end script**, which executes only after all incoming rows have been processed, useful for cleanup and summary tasks
- - a script tab may be declared a **lib script**, which can be imported by any other script tab when required
+ - automatic conversion between all kettle data types and ruby types
  - steps with no input can be used as row generators
- - Kettle step `$step` and transformation `$trans` objects are available in ruby scope for advanced scripting
- - you may call your favorite Java libraries from the ruby script
- - you may use ruby gems in Kettle transformations
+ - can redirect rows to an error handling stream
+ - can read from specific info steps
+ - can write to specific target steps
+ - can call your favorite Java libraries
+ - can use ruby gems
+ - kettle's step `$step` and transformation `$trans` objects are available in ruby scope for advanced scripting
 
 ## Where do I report bugs and issues?
 Just open [issues](https://github.com/twineworks/ruby-for-pentaho-kettle/issues) on github.
