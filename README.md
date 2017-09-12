@@ -6,8 +6,8 @@
 [![Travis Build Status](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle.svg?branch=master)](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/qd422po9spre0men/branch/master?svg=true)](https://ci.appveyor.com/project/slawo-ch/ruby-for-pentaho-kettle/branch/master)
 
+This plugin provides a scripting step similar to the javascript and java class steps. The implementation is based on [JRuby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
 
-This project provides a scripting step similar to the javascript and java class steps. The implementation is based on [JRuby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
 ## Supported versions of pentaho-kettle
 The plugin is built and tested against the most recent versions of Kettle 5.x, 6.x and 7.x.
 
@@ -19,7 +19,7 @@ Use the following dependency descriptor:
 <dependency>
   <groupId>com.twineworks</groupId>
   <artifactId>ruby-for-pentaho-kettle</artifactId>
-  <version>1.3.2</version>
+  <version>1.3.3</version>
   <classifier>plugin</classifier>
   <type>zip</type>
 </dependency>
