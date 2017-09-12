@@ -49,7 +49,7 @@ default location:
 
 ```bash
 # go to your plugin installation directory
-$ cd data-integration/plugins/ruby-for-kettle-<version>
+$ cd data-integration/plugins/ruby-for-kettle
 
 # install bundler into 'gems'
 $ java -jar lib/jruby-complete*.jar -S gem install -i gems --no-rdoc --no-ri bundler
