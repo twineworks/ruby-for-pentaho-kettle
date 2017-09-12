@@ -57,7 +57,8 @@ import java.util.List;
   i18nPackageName = "com.twineworks.kettle.ruby.step",
   name = "RubyStep.Step.Title",
   description = "RubyStep.Step.Tooltip",
-  categoryDescription = "i18n:org.pentaho.di.trans.step:BaseStep.Category.Scripting"
+  categoryDescription = "i18n:org.pentaho.di.trans.step:BaseStep.Category.Scripting",
+  documentationUrl = "https://github.com/twineworks/ruby-for-pentaho-kettle/wiki/Step"
 )
 public class RubyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
