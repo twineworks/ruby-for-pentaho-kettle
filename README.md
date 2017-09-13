@@ -39,48 +39,7 @@ The ruby scripting step comes with a lot of samples. You can access them by open
 Just open [issues](https://github.com/twineworks/ruby-for-pentaho-kettle/issues) on github.
 
 ## What about ruby gems?
-You can use ruby gems. As long as [JRuby](https://github.com/jruby/jruby) likes the gem, which usually means that the gem has no unsupported native bindings, you may use gems as with any other ruby program. You can define where your `gem_home` is on a per-step basis or globally through the kettle variable `RUBY_GEM_HOME`.
-
-By default the plugin uses `<plugin-dir>/gems` as its gems directory. Here's an example for maintaining your gems at the
-default location:
-
-```bash
-# go to your plugin installation directory
-$ cd data-integration/plugins/ruby-for-kettle
-
-# install bundler into 'gems'
-$ java -jar lib/jruby-complete*.jar -S gem install -i gems --no-rdoc --no-ri bundler
-Fetching: bundler-1.15.4.gem (100%)
-Successfully installed bundler-1.15.4
-1 gem installed
-
-# create a simple Gemfile
-$ echo "source 'http://rubygems.org'" > Gemfile
-$ echo "gem 'chronic' # https://github.com/mojombo/chronic" >> Gemfile
-$ cat Gemfile
-source 'http://rubygems.org'
-gem 'chronic' # https://github.com/mojombo/chronic
-
-# ask bundler to install gems into 'gems'
-$ PATH="gems/bin:$PATH" GEM_HOME="gems" GEM_PATH="gems" java -jar lib/jruby-complete*.jar -S bundle
-Fetching gem metadata from http://rubygems.org/.................
-Fetching version metadata from http://rubygems.org/..
-Using bundler 1.15.4
-Fetching chronic 0.10.2
-Installing chronic 0.10.2
-Bundle complete! 1 Gemfile dependency, 2 gems now installed.
-Use `bundle info [gemname]` to see where a bundled gem is installed.
-```
-
-Once the gems are in place, you can require them in your scripts like usual:
-
-```ruby
-require 'chronic'
-
-{
-  "date_guess" => Chronic::parse("tomorrow afternoon")
-}
-```
+You can use gems, see the [Ruby gems](https://github.com/twineworks/ruby-for-pentaho-kettle/wiki/Ruby-gems) article on the project wiki. As long as [JRuby](https://github.com/jruby/jruby) likes the gem, which usually means that the gem has no unsupported native bindings, you may use gems as with any other ruby program. 
 
 ## How do I build the project?
 ```bash
