@@ -10,7 +10,7 @@
 # steps tab. The info steps will be known by the tag you assign to them in the
 # script. They $info_steps hash (indexed by tag) allows you to read from the
 # specific steps. If you tag an info step with "foo", you can read rows from it 
-# like by calling read or read_all like this:
+# by calling read or read_all like this:
 # 
 # $info_steps["foo"].read() reads a single row from the info step and returns it
 # as a hash indexed by field name. It returns nil if there are no more rows in
