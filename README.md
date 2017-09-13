@@ -84,7 +84,7 @@ require 'chronic'
 
 ## How do I build the project?
 ```bash
-mvn package
+mvn clean package
 ```
 It creates the plugin zip in `target/ruby-for-pentaho-kettle-{version}-plugin.zip`.
 
