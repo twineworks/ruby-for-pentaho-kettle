@@ -9,7 +9,9 @@
 
 An plugin for Pentaho kettle (PDI) allowing to include ruby scripts as transformation steps. 
 
-The elegance of the ruby language is paired with ultimate row processing flexibility. The step allows scripts to read, write, aggregate, consume and redirect rows to accomplish the most complex of data processing tasks in one place. This plugin provides a scripting step similar to the javascript and java class steps. The implementation is based on [JRuby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
+The elegance of the ruby language is paired with ultimate row processing flexibility. The step allows scripts to read, write, aggregate, consume and redirect rows to accomplish the most complex of data processing tasks in one place. 
+
+The implementation is based on [JRuby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
 
 ## Supported versions of pentaho-kettle
 The plugin is built and [tested](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle) against the most recent versions of Kettle 5.x, 6.x and 7.x.
