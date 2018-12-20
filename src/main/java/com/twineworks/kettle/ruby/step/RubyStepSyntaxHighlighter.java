@@ -26,7 +26,7 @@ import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
-import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.common.NullWarnings;
 import org.jruby.lexer.ByteListLexerSource;
@@ -36,8 +36,8 @@ import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.RubyParser;
 import org.jruby.parser.RubyParserResult;
-import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.pentaho.di.ui.core.widget.StyledTextComp;
 
@@ -129,7 +129,7 @@ public class RubyStepSyntaxHighlighter {
   private StyleRange tokenToStyleRange(int token, Object value, int previousToken) {
 
     // determine keyword style up front
-    if (token >= Tokens.kCLASS && token <= Tokens.kDO_LAMBDA) {
+    if (token >= RubyParser.keyword_class && token <= RubyParser.keyword_do_lambda) {
       return styles[STYLE_KEYWORD];
     }
 
@@ -137,33 +137,33 @@ public class RubyStepSyntaxHighlighter {
       case TOKEN_COMMENT:
         return styles[STYLE_COMMENT];
 
-      case Tokens.tINTEGER:
-      case Tokens.tFLOAT:
-      case Tokens.tRATIONAL:
+      case RubyParser.tINTEGER:
+      case RubyParser.tFLOAT:
+      case RubyParser.tRATIONAL:
         return styles[STYLE_NUMBER];
-      case Tokens.tSTRING_BEG:
-      case Tokens.tSTRING_CONTENT:
-      case Tokens.tSTRING_END:
-      case Tokens.tSTRING_DBEG:
-      case Tokens.tSTRING_DVAR:
+      case RubyParser.tSTRING_BEG:
+      case RubyParser.tSTRING_CONTENT:
+      case RubyParser.tSTRING_END:
+      case RubyParser.tSTRING_DBEG:
+      case RubyParser.tSTRING_DVAR:
         return styles[STYLE_STRING];
-      case Tokens.tCONSTANT:
+      case RubyParser.tCONSTANT:
         return styles[STYLE_CONSTANT];
-      case Tokens.tGVAR:
-      case Tokens.tIVAR:
+      case RubyParser.tGVAR:
+      case RubyParser.tIVAR:
         return styles[STYLE_VARIABLE];
-      case Tokens.tREGEXP_BEG:
-      case Tokens.tREGEXP_END:
-      case Tokens.tPIPE:
+      case RubyParser.tREGEXP_BEG:
+      case RubyParser.tREGEXP_END:
+      case RubyParser.tPIPE:
         return styles[STYLE_LITERAL_BOUNDARY];
-      case Tokens.tSYMBEG:
+      case RubyParser.tSYMBEG:
         return styles[STYLE_SYMBOL];
-      case Tokens.tIDENTIFIER:
-        if (previousToken == Tokens.tSYMBEG) {
+      case RubyParser.tIDENTIFIER:
+        if (previousToken == RubyParser.tSYMBEG) {
           return styles[STYLE_SYMBOL];
         }
         // fall through
-      case Tokens.tFID:
+      case RubyParser.tFID:
 
         if (value != null && PSEUDO_KEYWORDS_SET.contains(value.toString())) {
           return styles[STYLE_KEYWORD];
@@ -222,7 +222,7 @@ public class RubyStepSyntaxHighlighter {
 
   private void initLexer(String title) {
     LexerSource lexerSource = new ByteListLexerSource(title, 0, new ByteList(utf8Bytes), null);
-    lexerSource.setEncoding(Encoding.load("UTF8"));
+    lexerSource.setEncoding(UTF8Encoding.INSTANCE);
 
     ParserSupport parserSupport = new ParserSupport();
     lexer = new RubyLexer(parserSupport, lexerSource, new NullWarnings(Ruby.getGlobalRuntime()));

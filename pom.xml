@@ -23,9 +23,29 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!--
+        Making a release:
+        - ensure pom.xml contains SNAPSHOT version
+        - ensure the snapshot release is successful
+          $ mvn clean deploy
+        - ensure pom.xml contains release version
+        - commit pom
+        - deploy release version
+          $ mvn clean deploy -P release
+        - tag release version
+        - ensure pom.xml contains next SNAPSHOT version
+        - commit
+        - push to github
+        - upload zip as github release
+
+        Details on release process to sonatype:
+        https://central.sonatype.org/pages/apache-maven.html
+
+    -->
+
     <groupId>com.twineworks</groupId>
     <artifactId>ruby-for-pentaho-kettle</artifactId>
-    <version>1.3.5-SNAPSHOT</version>
+    <version>1.3.5</version>
 
     <organization>
         <name>Twineworks GmbH</name>
@@ -62,9 +82,19 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <pentaho.kettle.version>5.4.1.8-209</pentaho.kettle.version>
+        <!--<pentaho.kettle.version>5.4.1.8-209</pentaho.kettle.version>-->
         <!--<pentaho.kettle.version>6.1.0.9-307</pentaho.kettle.version>-->
-        <!--<pentaho.kettle.version>7.1.0.4-63</pentaho.kettle.version>-->
+        <pentaho.kettle.version>7.1.0.4-63</pentaho.kettle.version>
+        <!--
+            Starting with 8.x Pentaho has split basic core steps into
+            plugins. Integration testing would involve finding the mvn
+            dependencies of all core steps, reassembling them, and changing
+            the test helper to ensure all core plugins are found and
+            initialized before running tests.
+            This seems too fragile and different from 5.x-7.x to support,
+            so the plugin is not CI tested against 8.x.
+        -->
+        <!--<pentaho.kettle.version>8.2.0.0-342</pentaho.kettle.version>-->
         <skipTests>true</skipTests>
     </properties>
 
@@ -254,7 +284,7 @@
         <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
-            <version>9.1.13.0</version>
+            <version>9.2.5.0</version>
         </dependency>
 
         <!-- kettle interface libs -->
