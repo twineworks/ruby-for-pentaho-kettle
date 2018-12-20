@@ -131,8 +131,10 @@ public class SimpleExecutionModel implements ExecutionModel {
       File gemHomePath = new File(gemHomeString);
       gemHomePath = gemHomePath.getAbsoluteFile();
 
-      RubyHash configHash = (RubyHash) data.container.parse("require 'rbconfig'; RbConfig::CONFIG").run();
-      configHash.put("default_gem_home", gemHomePath.getAbsolutePath());
+      List<String> extraGemPaths = data.container.getProvider().getRuntime().getInstanceConfig().getExtraGemPaths();
+      extraGemPaths.add(gemHomePath.getAbsolutePath());
+//      RubyHash configHash = (RubyHash) data.container.parse("require 'rbconfig'; RbConfig::CONFIG").run();
+//      configHash.put("default_gem_home", gemHomePath.getAbsolutePath().to);
     }
   }
 
