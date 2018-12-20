@@ -14,13 +14,11 @@ The elegance of the ruby language is paired with ultimate row processing flexibi
 The implementation is based on [JRuby](http://jruby.org). Thanks to JRuby's great Java interop, the scripting step also enables easy Java scripting in kettle.
 
 ## Supported versions of pentaho-kettle
-The plugin is built and [tested](https://travis-ci.org/twineworks/ruby-for-pentaho-kettle) against the most recent versions of Kettle 5.x, 6.x, 7.x. 
-It works with Kettle 8.x as well. 
+The plugin works with Kettle versions 5.x - 8.x. 
 
 ## How to get it?
 Grab the latest release from the [releases](https://github.com/twineworks/ruby-for-pentaho-kettle/releases) page.
 You can also get the plugin zip as a maven dependency from [maven central](http://search.maven.org/#search|gav|1|g:"com.twineworks"%20AND%20a:"ruby-for-pentaho-kettle"). 
-
 
 ## How to install?
 Decompress the release zip to `<kettle-dir>/plugins` and restart Spoon. The "Ruby Script" step will appear in the "Scripting" section of a transformation.

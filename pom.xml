@@ -82,9 +82,14 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--
+            Old transitive dependencies for Kettle 5 start disappearing from
+            public repositories accessible through Travis CI.
+            Have to remove Kettle 5 from CI test Matrix.
+        -->
         <!--<pentaho.kettle.version>5.4.1.8-209</pentaho.kettle.version>-->
         <!--<pentaho.kettle.version>6.1.0.9-307</pentaho.kettle.version>-->
-        <pentaho.kettle.version>7.1.0.4-63</pentaho.kettle.version>
+        <pentaho.kettle.version>7.1.0.19-174</pentaho.kettle.version>
         <!--
             Starting with 8.x Pentaho has split basic core steps into
             plugins. Integration testing would involve finding the mvn
